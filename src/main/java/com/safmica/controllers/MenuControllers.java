@@ -6,7 +6,7 @@ import com.safmica.*;
 
 public class MenuControllers {
     @FXML
-    private void switchToSecondary() throws IOException {
-        // App.setRoot("secondary");
+    private void switchToServer() throws IOException {
+        App.setRoot("server");
     }
 }

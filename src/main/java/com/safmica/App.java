@@ -17,8 +17,9 @@ public class App extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
-        scene = new Scene(loadFXML("views/menu"), 640, 480);
+        scene = new Scene(loadFXML("menu"), 640, 480);
         scene.getStylesheets().add(App.class.getResource("/com/safmica/styles/global.css").toExternalForm());
+        scene.getStylesheets().add(App.class.getResource("/com/safmica/styles/server.css").toExternalForm());
         stage.setScene(scene);
         stage.show();
     }
@@ -28,7 +29,7 @@ public class App extends Application {
     }
 
     private static Parent loadFXML(String fxml) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource("/com/safmica/" + fxml + ".fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource("/com/safmica/views/" + fxml + ".fxml"));
         return fxmlLoader.load();
     }
 
