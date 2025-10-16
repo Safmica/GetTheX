@@ -5,7 +5,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-
 import java.io.IOException;
 
 /**
@@ -20,11 +19,12 @@ public class App extends Application {
         scene = new Scene(loadFXML("menu"), 640, 480);
         scene.getStylesheets().add(App.class.getResource("/com/safmica/styles/global.css").toExternalForm());
         scene.getStylesheets().add(App.class.getResource("/com/safmica/styles/server.css").toExternalForm());
+        scene.getStylesheets().add(App.class.getResource("/com/safmica/styles/client.css").toExternalForm());
         stage.setScene(scene);
         stage.show();
     }
 
-    public static void setRoot(String fxml) throws IOException {
+    public static void setRoot(String fxml) throws IOException, IllegalStateException {
         scene.setRoot(loadFXML(fxml));
     }
 
