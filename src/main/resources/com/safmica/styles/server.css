@@ -21,15 +21,3 @@
     -fx-background-radius: 5;
     -fx-padding: 5;
 }
-
-.serverPage Button {
-    -fx-background-color: #4CAF50;
-    -fx-text-fill: white;
-    -fx-font-weight: bold;
-    -fx-padding: 8 16 8 16;
-    -fx-background-radius: 6;
-}
-
-.serverPage Button:hover {
-    -fx-background-color: #45a049;
-}

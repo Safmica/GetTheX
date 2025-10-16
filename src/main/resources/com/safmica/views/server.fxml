@@ -8,22 +8,20 @@
 <?import javafx.geometry.Insets?>
 
 <VBox spacing="15" alignment="CENTER"
-styleClass="serverPage"
+    styleClass="serverPage"
     xmlns="http://javafx.com/javafx/8.0.171"
     xmlns:fx="http://javafx.com/fxml/1"
-    fx:controller="com.safmica.controllers.MenuControllers">
+    fx:controller="com.safmica.controllers.ServerControllers">
 
     <Label text="Create Game Room" styleClass="title" maxWidth="Infinity" alignment="CENTER" />
     <VBox styleClass="serverForm">
-        <HBox spacing="10" alignment="CENTER">
-            <Label text="IP Address:" />
-            <TextField fx:id="ipAddressField" promptText="Enter IP Address" />
-        </HBox>
-
         <HBox spacing="10" alignment="CENTER">
             <Label text="Port:" />
             <TextField fx:id="portField" promptText="Enter Port" />
         </HBox>
     </VBox>
-    <Button text="Create" />
+    <HBox spacing="10" alignment="CENTER">
+        <Button text="Create" styleClass="submitButton" />
+        <Button text="Cancel" styleClass="cancelButton" onAction="#backToMenu" />
+    </HBox>
 </VBox>

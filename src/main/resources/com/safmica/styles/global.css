@@ -37,3 +37,39 @@
     -fx-scale-x: 0.97;
     -fx-scale-y: 0.97;
 }
+
+.submitButton {
+    -fx-background-color: #4CAF50;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 8 16 8 16;
+    -fx-background-radius: 6;
+}
+
+.submitButton:hover {
+    -fx-background-color: #45a049;
+}
+
+.submitButton:pressed {
+    -fx-background-color: linear-gradient(to bottom,rgb(61, 133, 39),rgb(41, 112, 28));
+    -fx-scale-x: 0.97;
+    -fx-scale-y: 0.97;
+}
+
+.cancelButton {
+    -fx-background-color:rgb(200, 36, 36);
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 8 16 8 16;
+    -fx-background-radius: 6;
+}
+
+.cancelButton:hover {
+    -fx-background-color: rgb(171, 36, 36);
+}
+
+.cancelButton:pressed {
+    -fx-background-color: linear-gradient(to bottom, rgb(145, 42, 42), rgb(127, 22, 22));
+    -fx-scale-x: 0.97;
+    -fx-scale-y: 0.97;
+}
