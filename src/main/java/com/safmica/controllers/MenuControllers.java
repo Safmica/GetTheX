@@ -3,6 +3,8 @@ package com.safmica.controllers;
 import com.safmica.*;
 import com.safmica.utils.*;
 import java.io.IOException;
+
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 
 public class MenuControllers {
@@ -23,5 +25,10 @@ public class MenuControllers {
     } catch (IOException | IllegalStateException e) {
       LoggerHandler.LogFXMLFailed("Client", e);
     }
+  }
+
+  @FXML
+  private void exitTheGame() {
+    Platform.exit();
   }
 }
