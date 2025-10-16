@@ -14,7 +14,7 @@ public class MenuControllers {
     try {
       App.setRoot("server");
     } catch (IOException | IllegalStateException e) {
-      LoggerHandler.LogFXMLFailed("Server", e);
+      LoggerHandler.logFXMLFailed("Server", e);
     }
   }
 
@@ -23,7 +23,7 @@ public class MenuControllers {
     try {
       App.setRoot("client");
     } catch (IOException | IllegalStateException e) {
-      LoggerHandler.LogFXMLFailed("Client", e);
+      LoggerHandler.logFXMLFailed("Client", e);
     }
   }
 

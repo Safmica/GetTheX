@@ -21,7 +21,7 @@
         </HBox>
     </VBox>
     <HBox spacing="10" alignment="CENTER">
-        <Button text="Create" styleClass="submitButton" />
+        <Button text="Create" styleClass="submitButton" onAction="#createTCPServer"/>
         <Button text="Cancel" styleClass="cancelButton" onAction="#backToMenu" />
     </HBox>
 </VBox>

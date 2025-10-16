@@ -12,7 +12,7 @@ public class ClientControllers {
     try {
       App.setRoot("menu");
     } catch (IOException | IllegalStateException e) {
-      LoggerHandler.LogFXMLFailed("Menu", e);
+      LoggerHandler.logFXMLFailed("Menu", e);
     }
   }
 }
