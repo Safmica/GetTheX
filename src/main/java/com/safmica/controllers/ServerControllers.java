@@ -4,6 +4,7 @@ import com.safmica.*;
 import com.safmica.network.*;
 import com.safmica.utils.LoggerHandler;
 import java.io.IOException;
+
 import javafx.fxml.FXML;
 import javafx.scene.control.TextField;
 
@@ -11,6 +12,7 @@ public class ServerControllers {
 
     @FXML
     private TextField portField;
+    private RoomServerControllers room;
 
     @FXML
     private void backToMenu() {
@@ -22,22 +24,22 @@ public class ServerControllers {
     }
 
     @FXML
-private void createTCPServer() {
-    String portText = portField.getText();
+    private void createTCPServer() {
+        String portText = portField.getText();
 
-    try {
-        int port = Integer.parseInt(portText);
+        try {
+            int port = Integer.parseInt(portText);
 
-        TcpServerManager serverManager = new TcpServerManager(port);
-        
-        serverManager.startServer();
+            room = new RoomServerControllers(port);
 
-        App.setRoot("room");
+            room.startServer();
 
-    } catch (NumberFormatException e) {
-        LoggerHandler.logErrorMessage("Invalid port number format.");
-    } catch (IOException | IllegalStateException e) {
-        LoggerHandler.logError("Failed to create server or change scene.", e);
+            App.setRoot("room_server");
+
+        } catch (NumberFormatException e) {
+            LoggerHandler.logErrorMessage("Invalid port number format.");
+        } catch (IOException | IllegalStateException e) {
+            LoggerHandler.logError("Failed to create server or change scene.", e);
+        }
     }
-}
 }

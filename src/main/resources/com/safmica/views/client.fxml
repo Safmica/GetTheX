@@ -26,7 +26,7 @@
         </HBox>
     </VBox>
     <HBox spacing="10" alignment="CENTER">
-        <Button text="Join" styleClass="submitButton" />
+        <Button text="Join" styleClass="submitButton" onAction="#joinRoom"/>
         <Button text="Cancel" styleClass="cancelButton" onAction="#backToMenu" />
     </HBox>
 </VBox>
