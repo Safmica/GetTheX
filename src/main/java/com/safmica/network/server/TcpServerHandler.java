@@ -1,5 +1,8 @@
 package com.safmica.network.server;
 
+import com.google.gson.Gson;
+import com.safmica.model.ClientConnectedMessage;
+import com.safmica.model.Message;
 import com.safmica.network.ClientConnectionListener;
 import com.safmica.utils.LoggerHandler;
 
@@ -13,6 +16,7 @@ public class TcpServerHandler extends Thread {
 
   private ServerSocket serverSocket;
   private int port;
+  private Gson gson = new com.google.gson.Gson();
   private boolean isRunning = true;
   private final List<ClientConnectionListener> listeners = new CopyOnWriteArrayList<>();
   private final List<ClientHandler> clients = new CopyOnWriteArrayList<>();
@@ -69,8 +73,12 @@ public class TcpServerHandler extends Thread {
   }
 
   private void broadcastClientConnected(String clientId) {
+    ClientConnectedMessage broadcastClientConnected = new ClientConnectedMessage();
+    broadcastClientConnected.clientId = clientId;
+    Message<ClientConnectedMessage> msg = new Message<>("CONNECTED", broadcastClientConnected);
+    String json = gson.toJson(msg);
     for (ClientHandler handler : clients) {
-      handler.sendMessage("CONNECTED:" + clientId);
+      handler.sendMessage(json);
     }
   }
 

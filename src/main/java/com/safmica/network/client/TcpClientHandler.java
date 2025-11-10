@@ -6,6 +6,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
+
+import com.safmica.model.ClientConnectedMessage;
+import com.safmica.model.Message;
 import com.safmica.network.ClientConnectionListener;
 import com.safmica.utils.LoggerHandler;
 
@@ -14,6 +20,7 @@ public class TcpClientHandler extends Thread {
     private int port;
     private Socket client;
     private boolean isRunning = true;
+    private Gson gson;
     private BufferedReader in;
     private PrintWriter out;
     private List<ClientConnectionListener> listeners;
@@ -46,14 +53,19 @@ public class TcpClientHandler extends Thread {
 
     @Override
     public void run() {
+        gson = new Gson();
         try {
             while (isRunning && client != null && !client.isClosed()) {
                 String line = in.readLine();
                 if (line == null)
                     break;
-                if (listeners != null) {
-                    for (ClientConnectionListener l : listeners) {
-                        l.onClientConnected(line); // Atur sesuai kebutuhan
+                Type type = new TypeToken<Message<ClientConnectedMessage>>() {
+                }.getType();
+                Message<ClientConnectedMessage> msg = gson.fromJson(line, type);
+
+                if (msg != null && listeners != null) {
+                    if ("CONNECTED".equals(msg.type) && msg.data != null) {
+                        clientConnectedHandler(msg);
                     }
                 }
             }
@@ -70,6 +82,13 @@ public class TcpClientHandler extends Thread {
             }
         } catch (IOException e) {
             LoggerHandler.logError("Error closing Client socket.", e);
+        }
+    }
+
+    private void clientConnectedHandler(Message<ClientConnectedMessage> msg) {
+        String clientId = msg.data.clientId;
+        for (ClientConnectionListener l : listeners) {
+            l.onClientConnected(clientId);
         }
     }
 }
