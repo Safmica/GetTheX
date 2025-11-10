@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -22,18 +23,11 @@ public class TcpClientHandler extends Thread {
     private Gson gson;
     private BufferedReader in;
     private PrintWriter out;
-    private List<ClientConnectionListener> listeners;
+    private List<ClientConnectionListener> listeners = new CopyOnWriteArrayList<>();
 
     public TcpClientHandler(String host, int port) {
         this.host = host;
         this.port = port;
-        try {
-            this.in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-            this.out = new PrintWriter(client.getOutputStream(), true);
-        } catch (IOException e) {
-            LoggerHandler.logError("Error initializing streams for client: " + client.getInetAddress().getHostAddress(),
-                    e);
-        }
     }
 
     public void addClientConnectionListener(ClientConnectionListener l) {
@@ -47,6 +41,13 @@ public class TcpClientHandler extends Thread {
     public void startClient() throws IOException {
         client = new Socket(host, port);
         LoggerHandler.logInfoMessage("Connect to " + host);
+        try {
+            this.in = new BufferedReader(new InputStreamReader(client.getInputStream()));
+            this.out = new PrintWriter(client.getOutputStream(), true);
+        } catch (IOException e) {
+            LoggerHandler.logError("Error initializing streams for client: " + client.getInetAddress().getHostAddress(),
+                    e);
+        }
         this.start();
     }
 

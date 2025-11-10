@@ -6,8 +6,6 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 
 import java.io.IOException;
@@ -20,21 +18,12 @@ public class RoomClientControllers implements ClientConnectionListener {
     @FXML
     private ListView<String> usersList;
 
-    @FXML
-    private Button startBtn;
-
-    @FXML
-    private Button stopBtn;
-
-    @FXML
-    private Label statusLabel;
-
     private TcpClientHandler client;
-    private final int port;
-    private final String host;
+    private int port;
+    private String host;
     private final ObservableList<String> users = FXCollections.observableArrayList();
 
-    public RoomClientControllers (String host, int port) {
+    public void setServerSocket (String host, int port) {
         this.port = port;
         this.host = host;
     }
@@ -42,11 +31,6 @@ public class RoomClientControllers implements ClientConnectionListener {
     @FXML
     private void initialize() {
         usersList.setItems(users);
-
-        startBtn.setOnAction(e -> startClient());
-        stopBtn.setOnAction(e -> stopClient());
-
-        stopBtn.setDisable(true);
     }
 
     public void startClient() {
@@ -56,11 +40,7 @@ public class RoomClientControllers implements ClientConnectionListener {
 
         try {
             client.startClient();
-            statusLabel.setText("Client running on port " + port);
-            startBtn.setDisable(true);
-            stopBtn.setDisable(false);
         } catch (IOException ex) {
-            statusLabel.setText("Failed to start Client: " + ex.getMessage());
         }
     }
 
@@ -68,9 +48,6 @@ public class RoomClientControllers implements ClientConnectionListener {
         if (client == null) return;
         client.stopClient();
         client = null;
-        statusLabel.setText("Client stopped");
-        startBtn.setDisable(false);
-        stopBtn.setDisable(true);
     }
 
     @Override
@@ -83,7 +60,7 @@ public class RoomClientControllers implements ClientConnectionListener {
                 alert.setTitle("Client Connected");
                 alert.setHeaderText(null);
                 alert.setContentText("New client joined: " + clientId);
-                alert.showAndWait();  // Tampilkan popup dan tunggu user close
+                alert.showAndWait();
             }
         });
     }

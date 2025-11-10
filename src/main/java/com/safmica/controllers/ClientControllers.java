@@ -5,9 +5,12 @@ import com.safmica.network.client.TcpClientHandler;
 import com.safmica.network.server.ClientHandler;
 import com.safmica.utils.*;
 import java.io.IOException;
+import java.net.URL;
+
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.control.TextField;
-import javafx.scene.text.Text;
 
 public class ClientControllers {
   @FXML
@@ -33,13 +36,14 @@ public class ClientControllers {
 
     try {
       int port = Integer.parseInt(portText);
-
-      room = new RoomClientControllers(ipText, port);
-
-      room.startClient();
-
-      App.setRoot("room_client");
-
+      URL fxmlUrl = getClass().getResource("/com/safmica/views/room_client.fxml");
+      FXMLLoader loader = new FXMLLoader(fxmlUrl);
+      Parent root = loader.load();
+      RoomClientControllers roomController = loader.getController();
+      roomController.setServerSocket(ipText, port);
+      roomController.startClient();
+      App.setRoot(root);
+      
     } catch (NumberFormatException e) {
       LoggerHandler.logErrorMessage("Invalid port number format.");
     } catch (IOException | IllegalStateException e) {

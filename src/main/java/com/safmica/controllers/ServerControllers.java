@@ -34,14 +34,12 @@ public class ServerControllers {
             int port = Integer.parseInt(portText);
 
             URL fxmlUrl = getClass().getResource("/com/safmica/views/room_server.fxml");
-            System.out.println("FXML URL: " + fxmlUrl);
             FXMLLoader loader = new FXMLLoader(fxmlUrl);
             Parent root = loader.load();
             RoomServerControllers roomController = loader.getController();
             roomController.setPort(port);
             roomController.startServer();
             App.setRoot(root);
-
         } catch (NumberFormatException e) {
             LoggerHandler.logErrorMessage("Invalid port number format.");
         } catch (IOException | IllegalStateException e) {
