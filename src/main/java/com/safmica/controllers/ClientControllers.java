@@ -14,6 +14,8 @@ import javafx.scene.control.TextField;
 
 public class ClientControllers {
   @FXML
+  private TextField usernameField;
+  @FXML
   private TextField portField;
   @FXML
   private TextField ipAddressField;
@@ -31,6 +33,7 @@ public class ClientControllers {
 
   @FXML
   private void joinRoom() {
+    String usernameText = usernameField.getText();
     String portText = portField.getText();
     String ipText = ipAddressField.getText();
 
@@ -41,7 +44,7 @@ public class ClientControllers {
       Parent root = loader.load();
       RoomClientControllers roomController = loader.getController();
       roomController.setServerSocket(ipText, port);
-      roomController.startClient();
+      roomController.startClient(usernameText);
       App.setRoot(root);
       
     } catch (NumberFormatException e) {

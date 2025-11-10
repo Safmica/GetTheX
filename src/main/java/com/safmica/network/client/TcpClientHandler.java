@@ -10,9 +10,9 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 
+import com.safmica.listener.ClientConnectionListener;
 import com.safmica.model.ClientConnectedMessage;
 import com.safmica.model.Message;
-import com.safmica.network.ClientConnectionListener;
 import com.safmica.utils.LoggerHandler;
 
 public class TcpClientHandler extends Thread {
@@ -38,17 +38,21 @@ public class TcpClientHandler extends Thread {
         listeners.remove(l);
     }
 
-    public void startClient() throws IOException {
-        client = new Socket(host, port);
-        LoggerHandler.logInfoMessage("Connect to " + host);
+    public void startClient(String username) {
         try {
-            this.in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-            this.out = new PrintWriter(client.getOutputStream(), true);
+            client = new Socket(host, port);
+            in = new BufferedReader(new InputStreamReader(client.getInputStream()));
+            out = new PrintWriter(client.getOutputStream(), true);
+
+            out.println(username);
+            this.start();
         } catch (IOException e) {
-            LoggerHandler.logError("Error initializing streams for client: " + client.getInetAddress().getHostAddress(),
-                    e);
+            LoggerHandler.logError("Failed to start client or connect to server.", e);
+            stopClient();
+        } catch (Exception e) {
+            LoggerHandler.logError("Unexpected error while starting client.", e);
+            stopClient();
         }
-        this.start();
     }
 
     @Override

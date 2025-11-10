@@ -16,6 +16,11 @@
     <Label text="Join Room" styleClass="title" maxWidth="Infinity" alignment="CENTER" />
     <VBox styleClass="clientForm">
         <HBox spacing="10" alignment="CENTER">
+            <Label text="Username:" />
+            <TextField fx:id="usernameField" promptText="Enter Your Username" />
+        </HBox>
+
+        <HBox spacing="10" alignment="CENTER">
             <Label text="IP Address:" />
             <TextField fx:id="ipAddressField" promptText="Enter IP Address" />
         </HBox>
@@ -26,7 +31,7 @@
         </HBox>
     </VBox>
     <HBox spacing="10" alignment="CENTER">
-        <Button text="Join" styleClass="submitButton" onAction="#joinRoom"/>
+        <Button text="Join" styleClass="submitButton" onAction="#joinRoom" />
         <Button text="Cancel" styleClass="cancelButton" onAction="#backToMenu" />
     </HBox>
 </VBox>

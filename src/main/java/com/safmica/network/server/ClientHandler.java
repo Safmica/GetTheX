@@ -1,6 +1,6 @@
 package com.safmica.network.server;
 
-import com.safmica.network.ClientConnectionListener;
+import com.safmica.listener.ClientConnectionListener;
 import com.safmica.utils.LoggerHandler;
 import java.io.BufferedReader;
 import java.io.IOException;

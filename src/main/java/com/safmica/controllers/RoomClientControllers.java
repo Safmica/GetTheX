@@ -10,18 +10,18 @@ import javafx.scene.control.ListView;
 
 import java.io.IOException;
 
-import com.safmica.network.ClientConnectionListener;
+import com.safmica.listener.ClientConnectionListener;
 import com.safmica.network.client.TcpClientHandler;
 
 public class RoomClientControllers implements ClientConnectionListener {
 
     @FXML
-    private ListView<String> usersList;
+    private ListView<String> playersList;
 
     private TcpClientHandler client;
     private int port;
     private String host;
-    private final ObservableList<String> users = FXCollections.observableArrayList();
+    private final ObservableList<String> players = FXCollections.observableArrayList();
 
     public void setServerSocket (String host, int port) {
         this.port = port;
@@ -30,18 +30,14 @@ public class RoomClientControllers implements ClientConnectionListener {
 
     @FXML
     private void initialize() {
-        usersList.setItems(users);
+        playersList.setItems(players);
     }
 
-    public void startClient() {
+    public void startClient(String username) {
         if (client != null) return;
         client = new TcpClientHandler(host, port);
         client.addClientConnectionListener(this);
-
-        try {
-            client.startClient();
-        } catch (IOException ex) {
-        }
+        client.startClient(username);
     }
 
     private void stopClient() {
@@ -53,8 +49,8 @@ public class RoomClientControllers implements ClientConnectionListener {
     @Override
     public void onClientConnected(String clientId) {
         Platform.runLater(() -> {
-            if (!users.contains(clientId)) {
-                users.add(clientId);
+            if (!players.contains(clientId)) {
+                players.add(clientId);
                 
                 Alert alert = new Alert(AlertType.INFORMATION);
                 alert.setTitle("Client Connected");
@@ -67,6 +63,6 @@ public class RoomClientControllers implements ClientConnectionListener {
 
     @Override
     public void onClientDisconnected(String clientId) {
-        Platform.runLater(() -> users.remove(clientId));
+        Platform.runLater(() -> players.remove(clientId));
     }
 }

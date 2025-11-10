@@ -16,12 +16,16 @@
     <Label text="Create Game Room" styleClass="title" maxWidth="Infinity" alignment="CENTER" />
     <VBox styleClass="serverForm">
         <HBox spacing="10" alignment="CENTER">
+            <Label text="Username:" />
+            <TextField fx:id="usernameField" promptText="Enter Your Username" />
+        </HBox>
+        <HBox spacing="10" alignment="CENTER">
             <Label text="Port:" />
             <TextField fx:id="portField" promptText="Enter Port" />
         </HBox>
     </VBox>
     <HBox spacing="10" alignment="CENTER">
-        <Button text="Create" styleClass="submitButton" onAction="#createTCPServer"/>
+        <Button text="Create" styleClass="submitButton" onAction="#createTCPServer" />
         <Button text="Cancel" styleClass="cancelButton" onAction="#backToMenu" />
     </HBox>
 </VBox>

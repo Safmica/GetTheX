@@ -12,17 +12,19 @@ import javafx.scene.control.ListView;
 
 import java.io.IOException;
 
-import com.safmica.network.ClientConnectionListener;
+import com.safmica.listener.ClientConnectionListener;
+import com.safmica.listener.PlayerListener;
+import com.safmica.model.Player;
 import com.safmica.network.server.TcpServerHandler;
 
-public class RoomServerControllers implements ClientConnectionListener {
+public class RoomServerControllers implements ClientConnectionListener, PlayerListener {
 
     @FXML
-    private ListView<String> usersList;
-
+    private ListView<Player> playersList;
+    private Player host;
     private TcpServerHandler server;
     private int port;
-    private final ObservableList<String> users = FXCollections.observableArrayList();
+    private final ObservableList<Player> players = FXCollections.observableArrayList();
 
     public void setPort (int port) {
         this.port = port;
@@ -30,7 +32,25 @@ public class RoomServerControllers implements ClientConnectionListener {
 
     @FXML
     private void initialize() {
-        usersList.setItems(users);
+        playersList.setItems(players);
+    }
+
+    public void setHost(String name) {
+        host = new Player(name, true);
+        players.add(host);
+    }
+
+    public void onPlayerAdded (String name) {
+        Player ply = new Player(name, false);
+        Platform.runLater(() -> {
+            players.add(ply);
+        });
+    }
+
+    public void onPlayerRemoved (String id) {
+        Platform.runLater(() -> {
+            players.removeIf(p -> p.getId().equals(id));
+        });
     }
 
     public void startServer() {
@@ -44,29 +64,21 @@ public class RoomServerControllers implements ClientConnectionListener {
         }
     }
 
-    private void stopServer() {
-        if (server == null) return;
-        server.stopServer();
-        server = null;
-    }
+    // private void stopServer() {
+    //     if (server == null) return;
+    //     server.stopServer();
+    //     server = null;
+    // }
     
     @Override
-    public void onClientConnected(String clientId) {
+    public void onClientConnected(String name) {
         Platform.runLater(() -> {
-            if (!users.contains(clientId)) {
-                users.add(clientId);
-                
-                Alert alert = new Alert(AlertType.INFORMATION);
-                alert.setTitle("Client Connected");
-                alert.setHeaderText(null);
-                alert.setContentText("New client joined: " + clientId);
-                alert.showAndWait();
-            }
+            onPlayerAdded(name);
         });
     }
 
     @Override
     public void onClientDisconnected(String clientId) {
-        Platform.runLater(() -> users.remove(clientId));
+        Platform.runLater(() -> players.remove(clientId));
     }
 }

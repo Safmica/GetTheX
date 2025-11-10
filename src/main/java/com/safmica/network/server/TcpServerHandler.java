@@ -1,12 +1,15 @@
 package com.safmica.network.server;
 
 import com.google.gson.Gson;
+import com.safmica.listener.ClientConnectionListener;
 import com.safmica.model.ClientConnectedMessage;
 import com.safmica.model.Message;
-import com.safmica.network.ClientConnectionListener;
 import com.safmica.utils.LoggerHandler;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
@@ -18,6 +21,8 @@ public class TcpServerHandler extends Thread {
   private int port;
   private Gson gson = new com.google.gson.Gson();
   private boolean isRunning = true;
+  private BufferedReader in;
+  private PrintWriter out;
   private final List<ClientConnectionListener> listeners = new CopyOnWriteArrayList<>();
   private final List<ClientHandler> clients = new CopyOnWriteArrayList<>();
 
@@ -40,10 +45,16 @@ public class TcpServerHandler extends Thread {
   }
 
   private void handleNewClient(Socket clientSocket) {
-    String clientId = clientSocket.getInetAddress().getHostAddress();
+    String clientUsername = null;
+    try {
+      clientUsername = in.readLine();
+    } catch (IOException e) {
+      LoggerHandler.logError("Error reading client username.", e);
+      return;
+    }
     for (ClientConnectionListener l : listeners) {
       try {
-        l.onClientConnected(clientId);
+        l.onClientConnected(clientUsername);
       } catch (Exception ignore) {
       }
     }
@@ -52,7 +63,7 @@ public class TcpServerHandler extends Thread {
     clients.add(handler);
 
     handler.start();
-    broadcastClientConnected(clientId);
+    broadcastClientConnected(clientUsername);
   }
 
   @Override
@@ -60,7 +71,8 @@ public class TcpServerHandler extends Thread {
     while (isRunning) {
       try {
         Socket clientSocket = serverSocket.accept();
-
+        in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+        out = new PrintWriter(clientSocket.getOutputStream(), true);
         handleNewClient(clientSocket);
       } catch (IOException e) {
         if (isRunning) {
@@ -82,14 +94,20 @@ public class TcpServerHandler extends Thread {
     }
   }
 
-  public void stopServer() {
+  public void stopClient(Socket clientSocket) {
     this.isRunning = false;
     try {
-      if (serverSocket != null) {
-        serverSocket.close();
+      if (in != null) {
+        in.close();
+      }
+      if (out != null) {
+        out.close();
+      }
+      if (clientSocket != null && !clientSocket.isClosed()) {
+        clientSocket.close();
       }
     } catch (IOException e) {
-      LoggerHandler.logError("Error closing server socket.", e);
+      LoggerHandler.logError("Error closing Client socket.", e);
     }
   }
 }

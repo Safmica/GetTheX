@@ -1,4 +1,4 @@
-package com.safmica.network;
+package com.safmica.listener;
 
 public interface ClientConnectionListener {
     void onClientConnected(String clientId);

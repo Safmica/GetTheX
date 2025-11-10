@@ -15,6 +15,8 @@ public class ServerControllers {
 
     @FXML
     private TextField portField;
+    @FXML
+    private TextField usernameField;
     private RoomServerControllers room;
 
     @FXML
@@ -28,6 +30,7 @@ public class ServerControllers {
 
     @FXML
     private void createTCPServer() {
+        String username = usernameField.getText();
         String portText = portField.getText();
 
         try {
@@ -38,6 +41,7 @@ public class ServerControllers {
             Parent root = loader.load();
             RoomServerControllers roomController = loader.getController();
             roomController.setPort(port);
+            roomController.setHost(username);
             roomController.startServer();
             App.setRoot(root);
         } catch (NumberFormatException e) {
