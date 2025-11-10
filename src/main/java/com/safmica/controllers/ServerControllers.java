@@ -4,8 +4,11 @@ import com.safmica.*;
 import com.safmica.network.*;
 import com.safmica.utils.LoggerHandler;
 import java.io.IOException;
+import java.net.URL;
 
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.control.TextField;
 
 public class ServerControllers {
@@ -30,11 +33,14 @@ public class ServerControllers {
         try {
             int port = Integer.parseInt(portText);
 
-            room = new RoomServerControllers(port);
-
-            room.startServer();
-
-            App.setRoot("room_server");
+            URL fxmlUrl = getClass().getResource("/com/safmica/views/room_server.fxml");
+            System.out.println("FXML URL: " + fxmlUrl);
+            FXMLLoader loader = new FXMLLoader(fxmlUrl);
+            Parent root = loader.load();
+            RoomServerControllers roomController = loader.getController();
+            roomController.setPort(port);
+            roomController.startServer();
+            App.setRoot(root);
 
         } catch (NumberFormatException e) {
             LoggerHandler.logErrorMessage("Invalid port number format.");

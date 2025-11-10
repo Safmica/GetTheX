@@ -20,31 +20,17 @@ public class RoomServerControllers implements ClientConnectionListener {
     @FXML
     private ListView<String> usersList;
 
-    @FXML
-    private Button startBtn;
-
-    @FXML
-    private Button stopBtn;
-
-    @FXML
-    private Label statusLabel;
-
     private TcpServerHandler server;
-    private final int port;
+    private int port;
     private final ObservableList<String> users = FXCollections.observableArrayList();
 
-    public RoomServerControllers (int port) {
+    public void setPort (int port) {
         this.port = port;
     }
 
     @FXML
     private void initialize() {
         usersList.setItems(users);
-
-        startBtn.setOnAction(e -> startServer());
-        stopBtn.setOnAction(e -> stopServer());
-
-        stopBtn.setDisable(true);
     }
 
     public void startServer() {
@@ -54,11 +40,7 @@ public class RoomServerControllers implements ClientConnectionListener {
 
         try {
             server.startServer();
-            statusLabel.setText("Server running on port " + port);
-            startBtn.setDisable(true);
-            stopBtn.setDisable(false);
         } catch (IOException ex) {
-            statusLabel.setText("Failed to start server: " + ex.getMessage());
         }
     }
 
@@ -66,9 +48,6 @@ public class RoomServerControllers implements ClientConnectionListener {
         if (server == null) return;
         server.stopServer();
         server = null;
-        statusLabel.setText("Server stopped");
-        startBtn.setDisable(false);
-        stopBtn.setDisable(true);
     }
     
     @Override
@@ -81,7 +60,7 @@ public class RoomServerControllers implements ClientConnectionListener {
                 alert.setTitle("Client Connected");
                 alert.setHeaderText(null);
                 alert.setContentText("New client joined: " + clientId);
-                alert.showAndWait();  // Tampilkan popup dan tunggu user close
+                alert.showAndWait();
             }
         });
     }

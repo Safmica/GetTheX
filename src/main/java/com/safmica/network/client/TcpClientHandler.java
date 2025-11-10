@@ -1,4 +1,3 @@
-// filepath: c:\Users\Asus\Documents\vscode\gotthex\src\main\java\com\safmica\network\client\TcpClientHandler.java
 package com.safmica.network.client;
 
 import java.io.*;
