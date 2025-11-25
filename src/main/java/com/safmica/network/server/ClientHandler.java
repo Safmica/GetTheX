@@ -1,6 +1,6 @@
 package com.safmica.network.server;
 
-import com.safmica.listener.ClientConnectionListener;
+import com.safmica.listener.RoomListener;
 import com.safmica.utils.LoggerHandler;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -10,66 +10,89 @@ import java.net.Socket;
 import java.util.List;
 
 public class ClientHandler extends Thread {
-    private Socket server;
-    private List<ClientConnectionListener> listeners;
+    private final TcpServerHandler server;
+    private Socket client;
+    private List<RoomListener> listeners;
+    private String username;
     private BufferedReader in;
     private PrintWriter out;
 
-    public ClientHandler(Socket server, List<ClientConnectionListener> listeners) {
+    public ClientHandler(Socket client, TcpServerHandler server, List<RoomListener> listeners, String username) {
+        this.client = client;
         this.server = server;
         this.listeners = listeners;
+        this.username = username;
         try {
-            this.in = new BufferedReader(new InputStreamReader(server.getInputStream()));
-            this.out = new PrintWriter(server.getOutputStream(), true);
+            this.in = new BufferedReader(new InputStreamReader(client.getInputStream()));
+            this.out = new PrintWriter(client.getOutputStream(), true);
         } catch (IOException e) {
-            LoggerHandler.logError("Error initializing streams for client: " + server.getInetAddress().getHostAddress(),e);
+            LoggerHandler.logError("Error initializing streams for client: " + client.getInetAddress().getHostAddress(),e);
         }
     }
 
     @Override
     public void run() {
-        String clientAddress = server.getInetAddress().getHostAddress();
-        LoggerHandler.logInfoMessage("Starting communication thread for client: " + clientAddress);
-
         try {
             String inputLine;
-            out.println("Welcome to the Game Room!");
 
             while ((inputLine = in.readLine()) != null) {
-                LoggerHandler.logInfoMessage("Received from " + clientAddress + ": " + inputLine);
-
-                String response = "Server received: " + inputLine.toUpperCase();
-                out.println(response);
 
                 if ("EXIT".equalsIgnoreCase(inputLine)) {
                     break;
                 }
             }
 
+        } catch (java.net.SocketException e) {
+            System.out.println("INFO: Client " + username + " disconnected abruptly.");
         } catch (IOException e) {
-            LoggerHandler.logError("Client " + clientAddress + " connection abruptly closed.", e);
+            LoggerHandler.logError("Client " + username + " connection error.", e);
         } finally {
-            ;
-            try {
-                server.close();
-                LoggerHandler.logInfoMessage("Client " + clientAddress + " disconnected.");
-            } catch (IOException e) {
-                LoggerHandler.logError("Error closing client socket for " + clientAddress, e);
+            cleanupConnection();
+        }
+    }
+    
+    private void cleanupConnection() {
+        try {
+            if (client != null && !client.isClosed()) {
+                client.close();
             }
-            for (ClientConnectionListener l : listeners) {
-                try {
-                    l.onClientDisconnected(clientAddress);
-                } catch (Exception ignore) {
-                }
+        } catch (IOException e) {
+            LoggerHandler.logError("Error closing client socket for " + username, e);
+        }
+
+        try {
+            if (in != null) {
+                in.close();
             }
+        } catch (IOException e) {
+        }
+        
+        try {
+            if (out != null) {
+                out.close();
+            }
+        } catch (Exception e) {
+        }
+
+        try {
+            server.unregisterClient(username, this);
+        } catch (Exception e) {
+            LoggerHandler.logError("Error unregistering client " + username, e);
         }
     }
 
     public void sendMessage(String message) {
         try {
-            out.println(message);
-            out.flush();
+            if (out != null && !client.isClosed()) {
+                out.println(message);
+                out.flush();
+            }
         } catch (Exception e) {
+            //todo: give some handle
         }
+    }
+    
+    public boolean isConnected() {
+        return client != null && !client.isClosed() && client.isConnected();
     }
 }

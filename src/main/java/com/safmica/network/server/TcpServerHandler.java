@@ -1,17 +1,18 @@
 package com.safmica.network.server;
 
 import com.google.gson.Gson;
-import com.safmica.listener.ClientConnectionListener;
-import com.safmica.model.ClientConnectedMessage;
+import com.safmica.listener.RoomListener;
 import com.safmica.model.Message;
+import com.safmica.model.Player;
+import com.safmica.model.PlayerEvent;
 import com.safmica.utils.LoggerHandler;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -21,49 +22,88 @@ public class TcpServerHandler extends Thread {
   private int port;
   private Gson gson = new com.google.gson.Gson();
   private boolean isRunning = true;
-  private BufferedReader in;
-  private PrintWriter out;
-  private final List<ClientConnectionListener> listeners = new CopyOnWriteArrayList<>();
+  private final List<RoomListener> listeners = new CopyOnWriteArrayList<>();
   private final List<ClientHandler> clients = new CopyOnWriteArrayList<>();
+  private final List<Player> players = new CopyOnWriteArrayList<>();
 
-  public TcpServerHandler(int port) {
+  public TcpServerHandler(int port, String username, RoomListener l) {
     this.port = port;
+    Player host = new Player(username, true);
+    players.add(host);
+    addRoomListener(l);
+    notifyPlayerListChanged();
   }
 
   public void startServer() throws IOException {
     serverSocket = new ServerSocket(port);
-    LoggerHandler.logInfoMessage("Server is running on port " + port);
+    // LoggerHandler.logInfoMessage("Server is running on port " + port);
     this.start();
   }
 
-  public void addClientConnectionListener(ClientConnectionListener l) {
+  public void addRoomListener(RoomListener l) {
     listeners.add(l);
   }
 
-  public void removeClientConnectionListener(ClientConnectionListener l) {
+  public void removeRoomListener(RoomListener l) {
     listeners.remove(l);
   }
 
-  private void handleNewClient(Socket clientSocket) {
-    String clientUsername = null;
+  private void notifyPlayerListChanged() {
+    List<Player> snapshot = new ArrayList<>(players);
+    for (RoomListener l : listeners) {
+      try {
+        l.onPlayerListChanged(snapshot);
+      } catch (Exception ignore) {
+      }
+    }
+  }
+
+  private void notifyPlayerConnected(String username) {
+    for (RoomListener l : listeners) {
+      try {
+        l.onPlayerConnected(username);
+      } catch (Exception ignore) {
+      }
+    }
+  }
+
+  private void notifyPlayerDisconnected(String username) {
+    for (RoomListener l : listeners) {
+      try {
+        l.onPlayerDisconnected(username);
+      } catch (Exception ignore) {
+      }
+    }
+  }
+
+  private synchronized void handleNewClient(Socket clientSocket) {
+    String clientUsername;
     try {
-      clientUsername = in.readLine();
+      BufferedReader socketIn = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+      clientUsername = socketIn.readLine();
+      if (clientUsername == null)
+        return;
     } catch (IOException e) {
       LoggerHandler.logError("Error reading client username.", e);
       return;
     }
-    for (ClientConnectionListener l : listeners) {
-      try {
-        l.onClientConnected(clientUsername);
-      } catch (Exception ignore) {
-      }
-    }
 
-    ClientHandler handler = new ClientHandler(clientSocket, listeners);
+    Player newPlayer = new Player(clientUsername, false);
+    ClientHandler handler = new ClientHandler(clientSocket, this, listeners, clientUsername);
+
+    players.add(newPlayer);
     clients.add(handler);
 
+    sendPlayerListToClient(handler);
+    broadcastPlayerEvent("CONNECTED", clientUsername, handler);
+    broadcastPlayerList(handler);
+    
+    notifyPlayerListChanged();
+    notifyPlayerConnected(clientUsername);
+    
     handler.start();
-    broadcastClientConnected(clientUsername);
+    System.out.println("CLIENT JOIN = "+clientUsername);
+    //TODO: remove this debug
   }
 
   @Override
@@ -71,43 +111,68 @@ public class TcpServerHandler extends Thread {
     while (isRunning) {
       try {
         Socket clientSocket = serverSocket.accept();
-        in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-        out = new PrintWriter(clientSocket.getOutputStream(), true);
         handleNewClient(clientSocket);
       } catch (IOException e) {
         if (isRunning) {
           LoggerHandler.logError("Error accepting client connection.", e);
         } else {
-          LoggerHandler.logInfoMessage("Server stopped.");
+          // LoggerHandler.logInfoMessage("Server stopped.");
         }
       }
     }
   }
 
-  private void broadcastClientConnected(String clientId) {
-    ClientConnectedMessage broadcastClientConnected = new ClientConnectedMessage();
-    broadcastClientConnected.clientId = clientId;
-    Message<ClientConnectedMessage> msg = new Message<>("CONNECTED", broadcastClientConnected);
-    String json = gson.toJson(msg);
+  public synchronized boolean unregisterClient(String username, ClientHandler handler) {
+    boolean removedHandler = clients.remove(handler);
+
+    Boolean removedUser = players.removeIf(p -> p.getName().equals(username));
+
+    if (removedUser) {
+      broadcastPlayerEvent("DISCONNECTED", username, null);
+      broadcastPlayerList(null);
+
+      notifyPlayerListChanged();
+      notifyPlayerDisconnected(username);
+    }
+    return removedHandler || removedUser;
+  }
+
+  private void broadcast(Message<?> message, ClientHandler exclude) {
+    String json = gson.toJson(message);
     for (ClientHandler handler : clients) {
-      handler.sendMessage(json);
+      if (handler != exclude) {
+        handler.sendMessage(json);
+      }
     }
   }
 
-  public void stopClient(Socket clientSocket) {
+  public void stopServer() {
     this.isRunning = false;
     try {
-      if (in != null) {
-        in.close();
-      }
-      if (out != null) {
-        out.close();
-      }
-      if (clientSocket != null && !clientSocket.isClosed()) {
-        clientSocket.close();
+      if (serverSocket != null && !serverSocket.isClosed()) {
+        serverSocket.close();
       }
     } catch (IOException e) {
       LoggerHandler.logError("Error closing Client socket.", e);
     }
+  }
+
+  private void sendPlayerListToClient(ClientHandler client) {
+    List<Player> snapshot = new ArrayList<>(players);
+    Message<List<Player>> msg = new Message<>("PLAYER_LIST", snapshot);
+    String json = gson.toJson(msg);
+    client.sendMessage(json);
+  }
+
+  private void broadcastPlayerList(ClientHandler exclude) {
+    List<Player> snapshot = new ArrayList<>(players);
+    Message<List<Player>> msg = new Message<>("PLAYER_LIST", snapshot);
+    broadcast(msg, exclude);
+  }
+
+  private void broadcastPlayerEvent(String eventType, String username, ClientHandler exclude) {
+    PlayerEvent event = new PlayerEvent(eventType, username);
+    Message<PlayerEvent> msg = new Message<>("PLAYER_EVENT", event);
+    broadcast(msg, exclude);
   }
 }

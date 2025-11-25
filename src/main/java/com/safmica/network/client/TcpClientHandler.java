@@ -1,19 +1,25 @@
 package com.safmica.network.client;
 
 import java.io.*;
-import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.stream.JsonReader;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 
-import com.safmica.listener.ClientConnectionListener;
-import com.safmica.model.ClientConnectedMessage;
+import com.safmica.listener.RoomListener;
 import com.safmica.model.Message;
+import com.safmica.model.Player;
+import com.safmica.model.PlayerEvent;
 import com.safmica.utils.LoggerHandler;
+
+import javafx.application.Platform;
 
 public class TcpClientHandler extends Thread {
     private String host;
@@ -23,18 +29,23 @@ public class TcpClientHandler extends Thread {
     private Gson gson;
     private BufferedReader in;
     private PrintWriter out;
-    private List<ClientConnectionListener> listeners = new CopyOnWriteArrayList<>();
+    private List<RoomListener> listeners = new CopyOnWriteArrayList<>();
+
+    public static final String TYPE_PLAYER_LIST = "PLAYER_LIST";
+    public static final String TYPE_PLAYER_EVENT = "PLAYER_EVENT";
+    public static final String TYPE_CONNECTED = "CONNECTED";
+    public static final String TYPE_DISCONNECTED = "DISCONNECTED";
 
     public TcpClientHandler(String host, int port) {
         this.host = host;
         this.port = port;
     }
 
-    public void addClientConnectionListener(ClientConnectionListener l) {
+    public void addRoomListener(RoomListener l) {
         listeners.add(l);
     }
 
-    public void removeClientConnectionListener(ClientConnectionListener l) {
+    public void removeRoomListener(RoomListener l) {
         listeners.remove(l);
     }
 
@@ -63,36 +74,104 @@ public class TcpClientHandler extends Thread {
                 String line = in.readLine();
                 if (line == null)
                     break;
-                Type type = new TypeToken<Message<ClientConnectedMessage>>() {
-                }.getType();
-                Message<ClientConnectedMessage> msg = gson.fromJson(line, type);
 
-                if (msg != null && listeners != null) {
-                    if ("CONNECTED".equals(msg.type) && msg.data != null) {
-                        clientConnectedHandler(msg);
+                JsonElement el = null;
+                try {
+                    JsonReader jrRoot = new JsonReader(new java.io.StringReader(line));
+                    jrRoot.setLenient(true);
+                    el = gson.fromJson(jrRoot, JsonElement.class);
+                } catch (Exception ex) {
+                    LoggerHandler.logError("Malformed JSON received from server: " + line, ex);
+                    continue;
+                }
+                if (el == null || !el.isJsonObject())
+                    continue;
+                JsonObject obj = el.getAsJsonObject();
+                String type = obj.has("type") && !obj.get("type").isJsonNull()
+                        ? obj.get("type").getAsString()
+                        : null;
+                if (type == null)
+                    continue;
+
+                switch (type) {
+                    case TYPE_PLAYER_LIST: {
+                        Type listType = new TypeToken<Message<List<Player>>>() {
+                        }.getType();
+                        Message<List<Player>> listMsg = gson.fromJson(line, listType);
+                        List<Player> users = listMsg.data;
+                        System.out.println("user"+users);
+                        Platform.runLater(() -> {
+                            for (RoomListener l : listeners) {
+                                l.onPlayerListChanged(users);
+                            }
+                        });
+                        break;
+                    }
+                    
+                    case TYPE_PLAYER_EVENT: {
+                        Type eventType = new TypeToken<Message<PlayerEvent>>() {
+                        }.getType();
+                        Message<PlayerEvent> eventMsg = gson.fromJson(line, eventType);
+                        if (eventMsg != null && eventMsg.data != null) {
+                            PlayerEvent event = eventMsg.data;
+                            Platform.runLater(() -> {
+                                for (RoomListener l : listeners) {
+                                    if (event.getEventType().equals(TYPE_CONNECTED)) {
+                                        l.onPlayerConnected(event.getUsername());
+                                    } else if (event.getEventType().equals(TYPE_DISCONNECTED)) {
+                                        l.onPlayerDisconnected(event.getUsername());
+                                    }
+                                }
+                            });
+                        }
+                        break;
+                    }
+                    default: {
+                        //todo: give some handle (if not lazy)
                     }
                 }
             }
+        } catch (SocketException e) {
+            if (isRunning) {
+                System.out.println("WARNING: Connection to server lost.");
+                Platform.runLater(() -> {
+                    //todo: give some handle
+                });
+            }
         } catch (IOException e) {
-            LoggerHandler.logError("Error in client handler run loop.", e);
+            if (isRunning) {
+                LoggerHandler.logError("Error in client handler run loop.", e);
+            }
+        } finally {
+            cleanup();
+        }
+    }
+    
+    private void cleanup() {
+        try {
+            if (in != null) {
+                in.close();
+            }
+        } catch (IOException e) {
+        }
+        
+        try {
+            if (out != null) {
+                out.close();
+            }
+        } catch (Exception e) {
+        }
+        
+        try {
+            if (client != null && !client.isClosed()) {
+                client.close();
+            }
+        } catch (IOException e) {
         }
     }
 
     public void stopClient() {
         this.isRunning = false;
-        try {
-            if (client != null) {
-                client.close();
-            }
-        } catch (IOException e) {
-            LoggerHandler.logError("Error closing Client socket.", e);
-        }
-    }
-
-    private void clientConnectedHandler(Message<ClientConnectedMessage> msg) {
-        String clientId = msg.data.clientId;
-        for (ClientConnectionListener l : listeners) {
-            l.onClientConnected(clientId);
-        }
+        cleanup();
     }
 }

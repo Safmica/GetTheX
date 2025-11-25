@@ -1,7 +1,6 @@
 package com.safmica.controllers;
 
 import com.safmica.*;
-import com.safmica.network.*;
 import com.safmica.utils.LoggerHandler;
 import java.io.IOException;
 import java.net.URL;
@@ -17,7 +16,6 @@ public class ServerControllers {
     private TextField portField;
     @FXML
     private TextField usernameField;
-    private RoomServerControllers room;
 
     @FXML
     private void backToMenu() {
@@ -41,8 +39,7 @@ public class ServerControllers {
             Parent root = loader.load();
             RoomServerControllers roomController = loader.getController();
             roomController.setPort(port);
-            roomController.setHost(username);
-            roomController.startServer();
+            roomController.startServer(username);
             App.setRoot(root);
         } catch (NumberFormatException e) {
             LoggerHandler.logErrorMessage("Invalid port number format.");

@@ -1,6 +1,8 @@
 package com.safmica.listener;
 
+import com.safmica.model.Player;
+
 public interface PlayerListener {
-    void onPlayerAdded(String name);
-    void onPlayerRemoved(String name);
+    Player onPlayerAdded(String name);
+    Player onPlayerRemoved(String name);
 }
