@@ -98,6 +98,23 @@ public class RoomController implements RoomListener {
     public void onPlayerDisconnected(String username) {
         Platform.runLater(() -> {
             System.out.println(username + " left the room");
+
+            Player disconnectedPlayer = players.stream()
+                .filter(p -> p.getName().equals(username) && p.isHost())
+                .findFirst()
+                .orElse(null);
+            
+            if (disconnectedPlayer != null && !isHost) {
+                System.out.println("Host disconnected - leaving room...");
+                cleanup();
+                
+                try {
+                    App.setRoot("menu");
+                } catch (IOException | IllegalStateException e) {
+                    LoggerHandler.logFXMLFailed("Menu", e);
+                }
+            }
+            
             // TODO: Add some notify ui lol
         });
     }

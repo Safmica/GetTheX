@@ -151,9 +151,7 @@ public class TcpClientHandler extends Thread {
         } catch (SocketException e) {
             if (isRunning) {
                 System.out.println("WARNING: Connection to server lost.");
-                Platform.runLater(() -> {
-                    // todo: give some handle
-                });
+                stopClient();
             }
         } catch (IOException e) {
             if (isRunning) {
