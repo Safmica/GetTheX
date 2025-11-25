@@ -4,6 +4,7 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 
 import java.io.IOException;
@@ -21,6 +22,8 @@ public class RoomController implements RoomListener {
 
     @FXML
     private ListView<Player> playersList;
+    @FXML
+    private Button startButton;
     
     private TcpClientHandler clientHandler;
     private TcpServerHandler server;
@@ -40,6 +43,11 @@ public class RoomController implements RoomListener {
         try {
             server.startServer();
             System.out.println("DEBUG : SERVER START ON PORT " + port);
+        
+            if (startButton != null) {
+                startButton.setVisible(true);
+                startButton.setManaged(true);
+            }
             
             new Thread(() -> {
                 try {
@@ -58,6 +66,12 @@ public class RoomController implements RoomListener {
 
     public void initAsClient(String host, int port, String username) {
         this.isHost = false;
+        
+        if (startButton != null) {
+            startButton.setVisible(false);
+            startButton.setManaged(false);
+        }
+        
         connectAsClient(host, port, username);
     }
 
@@ -117,6 +131,17 @@ public class RoomController implements RoomListener {
             
             // TODO: Add some notify ui lol
         });
+    }
+    
+    @FXML
+    private void handleStart() {
+        if (!isHost) {
+            System.out.println("Only host can start the game!");
+            return;
+        }
+        
+        System.out.println("Host started the game!");
+        // TODO: Implement start game logic
     }
     
     @FXML

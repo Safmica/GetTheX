@@ -11,6 +11,7 @@
     <children>
         <Label text="Got The X Room" styleClass="title"/>
         <ListView fx:id="playersList" prefHeight="200.0" prefWidth="360.0" />
+        <Button fx:id="startButton" text="Start" onAction="#handleStart" styleClass="submitButton" prefWidth="100.0" visible="false" managed="false" />
         <Button text="Exit" onAction="#handleExit" styleClass="button-danger" prefWidth="100.0" />
     </children>
     <padding>
