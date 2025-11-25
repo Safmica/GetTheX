@@ -8,9 +8,11 @@ import javafx.scene.control.ListView;
 
 import java.io.IOException;
 
+import com.safmica.App;
 import com.safmica.listener.RoomListener;
 import com.safmica.model.Player;
 import com.safmica.network.server.TcpServerHandler;
+import com.safmica.utils.LoggerHandler;
 import com.safmica.utils.ui.PlayerListCell;
 
 public class RoomServerControllers implements RoomListener {
@@ -72,5 +74,15 @@ public class RoomServerControllers implements RoomListener {
             System.out.println(username + " left the room");
             // TODO: Add some notify ui lol
         });
+    }
+    
+    @FXML
+    private void handleExit() {
+        stopServer();
+        try {
+            App.setRoot("menu");
+        } catch (IOException | IllegalStateException e) {
+            LoggerHandler.logFXMLFailed("Menu", e);
+        }
     }
 }

@@ -151,6 +151,8 @@ public class TcpServerHandler extends Thread {
     try {
       if (serverSocket != null && !serverSocket.isClosed()) {
         serverSocket.close();
+        System.out.println("DEBUG : SERVER CLOSE");
+        //TODO: REMOVE THIS DEBUG
       }
     } catch (IOException e) {
       LoggerHandler.logError("Error closing Client socket.", e);

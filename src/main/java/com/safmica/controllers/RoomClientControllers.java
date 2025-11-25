@@ -6,11 +6,14 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.ListView;
 
+import java.io.IOException;
 import java.util.List;
 
+import com.safmica.App;
 import com.safmica.listener.RoomListener;
 import com.safmica.model.Player;
 import com.safmica.network.client.TcpClientHandler;
+import com.safmica.utils.LoggerHandler;
 import com.safmica.utils.ui.PlayerListCell;
 
 public class RoomClientControllers implements RoomListener {
@@ -68,5 +71,25 @@ public class RoomClientControllers implements RoomListener {
             System.out.println(username + " left the room");
             // TODO: Add some notify ui
         });
+    }
+    
+    @FXML
+    private void handleExit() {
+        stopClient();
+        
+        new Thread(() -> {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+            }
+            
+            Platform.runLater(() -> {
+                try {
+                    App.setRoot("menu");
+                } catch (IOException | IllegalStateException e) {
+                    LoggerHandler.logFXMLFailed("Menu", e);
+                }
+            });
+        }).start();
     }
 }

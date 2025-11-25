@@ -99,7 +99,7 @@ public class TcpClientHandler extends Thread {
                         }.getType();
                         Message<List<Player>> listMsg = gson.fromJson(line, listType);
                         List<Player> users = listMsg.data;
-                        System.out.println("user"+users);
+                        System.out.println("user" + users);
                         Platform.runLater(() -> {
                             for (RoomListener l : listeners) {
                                 l.onPlayerListChanged(users);
@@ -107,7 +107,7 @@ public class TcpClientHandler extends Thread {
                         });
                         break;
                     }
-                    
+
                     case TYPE_PLAYER_EVENT: {
                         Type eventType = new TypeToken<Message<PlayerEvent>>() {
                         }.getType();
@@ -127,7 +127,7 @@ public class TcpClientHandler extends Thread {
                         break;
                     }
                     default: {
-                        //todo: give some handle (if not lazy)
+                        // todo: give some handle (if not lazy)
                     }
                 }
             }
@@ -135,7 +135,7 @@ public class TcpClientHandler extends Thread {
             if (isRunning) {
                 System.out.println("WARNING: Connection to server lost.");
                 Platform.runLater(() -> {
-                    //todo: give some handle
+                    // todo: give some handle
                 });
             }
         } catch (IOException e) {
@@ -146,32 +146,58 @@ public class TcpClientHandler extends Thread {
             cleanup();
         }
     }
-    
+
     private void cleanup() {
+        // Close input stream
         try {
             if (in != null) {
                 in.close();
             }
         } catch (IOException e) {
+            // Ignore
         }
-        
+
+        // Close output stream
         try {
             if (out != null) {
                 out.close();
             }
         } catch (Exception e) {
+            // Ignore
         }
-        
+
+        // Close socket (only if not already closed)
         try {
             if (client != null && !client.isClosed()) {
                 client.close();
             }
         } catch (IOException e) {
+            // Ignore
         }
     }
 
     public void stopClient() {
         this.isRunning = false;
-        cleanup();
+        
+        // Close socket in separate thread to avoid blocking JavaFX thread
+        new Thread(() -> {
+            try {
+                // Close socket first to interrupt readLine()
+                if (client != null && !client.isClosed()) {
+                    client.close();
+                }
+            } catch (IOException e) {
+                // Ignore
+            }
+            
+            // Give time for run() thread to finish
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                // Ignore
+            }
+            
+            cleanup();
+        }).start();
     }
 }
