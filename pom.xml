@@ -48,6 +48,10 @@
                         <id>default-cli</id>
                         <configuration>
                             <mainClass>com.safmica.App</mainClass>
+                            <options>
+                                <option>--add-opens</option>
+                                <option>com.safmica/com.safmica.model=com.google.gson</option>
+                            </options>
                         </configuration>
                     </execution>
                 </executions>
