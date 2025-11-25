@@ -1,26 +1,22 @@
 package com.safmica.network.server;
 
-import com.safmica.listener.RoomListener;
 import com.safmica.utils.LoggerHandler;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.List;
 
 public class ClientHandler extends Thread {
     private final TcpServerHandler server;
     private Socket client;
-    private List<RoomListener> listeners;
     private String username;
     private BufferedReader in;
     private PrintWriter out;
 
-    public ClientHandler(Socket client, TcpServerHandler server, List<RoomListener> listeners, String username) {
+    public ClientHandler(Socket client, TcpServerHandler server, String username) {
         this.client = client;
         this.server = server;
-        this.listeners = listeners;
         this.username = username;
         try {
             this.in = new BufferedReader(new InputStreamReader(client.getInputStream()));

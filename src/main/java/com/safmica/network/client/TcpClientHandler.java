@@ -35,10 +35,18 @@ public class TcpClientHandler extends Thread {
     public static final String TYPE_PLAYER_EVENT = "PLAYER_EVENT";
     public static final String TYPE_CONNECTED = "CONNECTED";
     public static final String TYPE_DISCONNECTED = "DISCONNECTED";
+    
+    private String username;
 
     public TcpClientHandler(String host, int port) {
         this.host = host;
         this.port = port;
+    }
+    
+    public TcpClientHandler(String host, int port, String username) {
+        this.host = host;
+        this.port = port;
+        this.username = username;
     }
 
     public void addRoomListener(RoomListener l) {
@@ -50,6 +58,15 @@ public class TcpClientHandler extends Thread {
     }
 
     public void startClient(String username) {
+        this.username = username;
+        startClient();
+    }
+    
+    public void startClient() {
+        if (username == null) {
+            throw new IllegalStateException("Username must be set before starting client");
+        }
+        
         try {
             client = new Socket(host, port);
             in = new BufferedReader(new InputStreamReader(client.getInputStream()));
@@ -148,53 +165,42 @@ public class TcpClientHandler extends Thread {
     }
 
     private void cleanup() {
-        // Close input stream
         try {
             if (in != null) {
                 in.close();
             }
         } catch (IOException e) {
-            // Ignore
         }
 
-        // Close output stream
         try {
             if (out != null) {
                 out.close();
             }
         } catch (Exception e) {
-            // Ignore
         }
 
-        // Close socket (only if not already closed)
         try {
             if (client != null && !client.isClosed()) {
                 client.close();
             }
         } catch (IOException e) {
-            // Ignore
         }
     }
 
     public void stopClient() {
         this.isRunning = false;
         
-        // Close socket in separate thread to avoid blocking JavaFX thread
         new Thread(() -> {
             try {
-                // Close socket first to interrupt readLine()
                 if (client != null && !client.isClosed()) {
                     client.close();
                 }
             } catch (IOException e) {
-                // Ignore
             }
             
-            // Give time for run() thread to finish
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
-                // Ignore
             }
             
             cleanup();

@@ -13,23 +13,19 @@ import com.safmica.App;
 import com.safmica.listener.RoomListener;
 import com.safmica.model.Player;
 import com.safmica.network.client.TcpClientHandler;
+import com.safmica.network.server.TcpServerHandler;
 import com.safmica.utils.LoggerHandler;
 import com.safmica.utils.ui.PlayerListCell;
 
-public class RoomClientControllers implements RoomListener {
+public class RoomController implements RoomListener {
 
     @FXML
     private ListView<Player> playersList;
-
-    private TcpClientHandler client;
-    private int port;
-    private String host;
+    
+    private TcpClientHandler clientHandler;
+    private TcpServerHandler server;
+    private boolean isHost;
     private final ObservableList<Player> players = FXCollections.observableArrayList();
-
-    public void setServerSocket (String host, int port) {
-        this.port = port;
-        this.host = host;
-    }
 
     @FXML
     private void initialize() {
@@ -37,45 +33,78 @@ public class RoomClientControllers implements RoomListener {
         playersList.setCellFactory(listView -> new PlayerListCell());
     }
 
-    public void startClient(String username) {
-        if (client != null) return;
-        client = new TcpClientHandler(host, port);
-        client.addRoomListener(this);
-        client.startClient(username);
+    public void initAsHost(int port, String username) {
+        this.isHost = true;
+        server = new TcpServerHandler(port);
+
+        try {
+            server.startServer();
+            System.out.println("DEBUG : SERVER START ON PORT " + port);
+            
+            new Thread(() -> {
+                try {
+                    Thread.sleep(200);
+                    connectAsClient("localhost", port, username);
+                    System.out.println("DEBUG : HOST CONNECTED AS CLIENT");
+                } catch (Exception e) {
+                    LoggerHandler.logError("Error connecting host as client", e);
+                }
+            }).start();
+            
+        } catch (IOException ex) {
+            LoggerHandler.logError("Error starting server", ex);
+        }
     }
 
-    private void stopClient() {
-        if (client == null) return;
-        client.stopClient();
-        client = null;
+    public void initAsClient(String host, int port, String username) {
+        this.isHost = false;
+        connectAsClient(host, port, username);
     }
-    
+
+    private void connectAsClient(String host, int port, String username) {
+        clientHandler = new TcpClientHandler(host, port, username);
+        clientHandler.addRoomListener(this);
+        clientHandler.startClient();
+    }
+
+    private void cleanup() {
+        if (clientHandler != null) {
+            clientHandler.stopClient();
+            clientHandler = null;
+        }
+        
+        if (server != null) {
+            server.stopServer();
+            server = null;
+        }
+    }
+
     @Override
     public void onPlayerListChanged(List<Player> serverPlayers) {
         Platform.runLater(() -> {
             players.setAll(serverPlayers);
         });
     }
-    
+
     @Override
     public void onPlayerConnected(String username) {
         Platform.runLater(() -> {
             System.out.println(username + " joined the room");
-            // TODO: Add some notify ui
+            // TODO: Add some notify ui lol
         });
     }
-    
+
     @Override
     public void onPlayerDisconnected(String username) {
         Platform.runLater(() -> {
             System.out.println(username + " left the room");
-            // TODO: Add some notify ui
+            // TODO: Add some notify ui lol
         });
     }
     
     @FXML
     private void handleExit() {
-        stopClient();
+        cleanup();
         
         new Thread(() -> {
             try {

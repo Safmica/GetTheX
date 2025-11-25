@@ -1,8 +1,6 @@
 package com.safmica.controllers;
 
 import com.safmica.*;
-import com.safmica.network.client.TcpClientHandler;
-import com.safmica.network.server.ClientHandler;
 import com.safmica.utils.*;
 import java.io.IOException;
 import java.net.URL;
@@ -19,8 +17,6 @@ public class ClientControllers {
   private TextField portField;
   @FXML
   private TextField ipAddressField;
-
-  private RoomClientControllers room;
 
   @FXML
   private void backToMenu() {
@@ -39,12 +35,11 @@ public class ClientControllers {
 
     try {
       int port = Integer.parseInt(portText);
-      URL fxmlUrl = getClass().getResource("/com/safmica/views/room_client.fxml");
+      URL fxmlUrl = getClass().getResource("/com/safmica/views/room.fxml");
       FXMLLoader loader = new FXMLLoader(fxmlUrl);
       Parent root = loader.load();
-      RoomClientControllers roomController = loader.getController();
-      roomController.setServerSocket(ipText, port);
-      roomController.startClient(usernameText);
+      RoomController roomController = loader.getController();
+      roomController.initAsClient(ipText, port, usernameText);
       App.setRoot(root);
       
     } catch (NumberFormatException e) {
