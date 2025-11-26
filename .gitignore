@@ -3,6 +3,14 @@ target/
 build/
 out/
 
+# Build artifacts & dependencies
+dist/
+lib/
+temp/
+
+# Old/unused scripts
+cmd/
+
 # IDE cache
 .idea/
 .vscode/
