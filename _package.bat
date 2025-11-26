@@ -26,7 +26,7 @@ echo Manifest-Version: 1.0 > build\MANIFEST.MF
 echo Main-Class: com.safmica.Launcher >> build\MANIFEST.MF
 
 cd build
-"%JAR_CMD%" cfm ..\dist\GotTheX.jar MANIFEST.MF *
+"%JAR_CMD%" cfm ..\dist\GetTheX.jar MANIFEST.MF *
 if errorlevel 1 (
     cd ..
     echo ERROR: Failed to create JAR file!
@@ -42,8 +42,8 @@ REM Create launcher batch file
 (
 echo @echo off
 echo set PATH=%%~dp0libs;%%PATH%%
-echo java --module-path libs --add-modules javafx.controls,javafx.fxml -cp "libs\*;GotTheX.jar" com.safmica.Launcher
+echo java --module-path libs --add-modules javafx.controls,javafx.fxml -cp "libs\*;GetTheX.jar" com.safmica.Launcher
 echo pause
-) > dist\GotTheX.bat
+) > dist\GetTheX.bat
 
 exit /b 0

@@ -9,7 +9,7 @@
 
 <VBox alignment="CENTER" spacing="10.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.safmica.controllers.RoomController">
     <children>
-        <Label text="Got The X Room" styleClass="title"/>
+        <Label text="Get The X Room" styleClass="title"/>
         <ListView fx:id="playersList" prefHeight="200.0" prefWidth="360.0" />
         <Button fx:id="startButton" text="Start" onAction="#handleStart" styleClass="submitButton" prefWidth="100.0" visible="false" managed="false" />
         <Button text="Exit" onAction="#handleExit" styleClass="button-danger" prefWidth="100.0" />

@@ -1,7 +1,7 @@
 @echo off
 cls
 echo ========================================
-echo                GotTheX 
+echo                GetTheX 
 echo ========================================
 echo.
 
@@ -42,5 +42,5 @@ call _package.bat
 
 echo [5/5] Done!
 echo.
-echo Run: cd dist ^& GotTheX.bat
+echo Run: cd dist ^& GetTheX.bat
 pause

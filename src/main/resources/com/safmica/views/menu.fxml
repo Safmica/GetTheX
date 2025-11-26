@@ -7,7 +7,7 @@
 
 <VBox alignment="CENTER" spacing="20.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.safmica.controllers.MenuControllers">
     <children>
-        <Label text="Got The X" styleClass="title"/>
+        <Label text="Get The X" styleClass="title"/>
         <Button text="Create Game" onAction="#switchToServer" />
         <Button text="Join Game" onAction="#switchToClient"/>
         <Button text="Exit" onAction="#exitTheGame" styleClass="cancelButton"/>
