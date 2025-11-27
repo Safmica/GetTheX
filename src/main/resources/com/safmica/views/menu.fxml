@@ -5,7 +5,7 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.geometry.Insets?>
 
-<VBox alignment="CENTER" spacing="20.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.safmica.controllers.MenuControllers">
+<VBox alignment="CENTER" spacing="20.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.safmica.controllers.MenuController">
     <children>
         <Label text="Get The X" styleClass="title"/>
         <Button text="Create Game" onAction="#switchToServer" />
