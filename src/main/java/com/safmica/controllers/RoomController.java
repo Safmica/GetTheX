@@ -163,7 +163,12 @@ public class RoomController implements RoomListener {
             return;
         }
 
-        System.out.println("Host started the game!");
+        // TODO : BROADCAST TO CLIENT
+        try {
+            App.setRoot("game");
+        } catch (IOException | IllegalStateException e) {
+            LoggerHandler.logFXMLFailed("Game", e);
+        }
         // TODO: Implement start game logic
     }
 
@@ -197,7 +202,7 @@ public class RoomController implements RoomListener {
                     if (newTotalRound < 3 || newTotalRound > 15) {
                         System.out.println("DEBUG : TOTAL ROUND MUST BETWEEN 3-15");
                         return;
-                    } else if (newTotalRound%2==0) {
+                    } else if (newTotalRound % 2 == 0) {
                         System.out.println("DEBUG : TOTAL ROUND MUST BE AN ODD NUMBER");
                         return;
                     }
