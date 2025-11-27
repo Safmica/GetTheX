@@ -82,3 +82,10 @@
 .button-danger:hover {
     -fx-background-color: #c82333;
 }
+
+.informationText {
+    -fx-text-fill: #f4f4f4;
+    -fx-font-size: 15px;
+    -fx-font-weight: bolder;
+    -fx-alignment: center;
+}

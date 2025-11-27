@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.safmica.model.Message;
 import com.safmica.model.Player;
 import com.safmica.model.PlayerEvent;
+import com.safmica.model.Room;
 import com.safmica.utils.LoggerHandler;
 
 import java.io.BufferedReader;
@@ -21,8 +22,10 @@ public class TcpServerHandler extends Thread {
   private int port;
   private Gson gson = new com.google.gson.Gson();
   private boolean isRunning = true;
+  private Room room;
   private final List<ClientHandler> clients = new CopyOnWriteArrayList<>();
   private final List<Player> players = new CopyOnWriteArrayList<>();
+  private final String TOTAL_CARD = "TOTAL_CARD";
 
   public TcpServerHandler(int port) {
     this.port = port;
@@ -30,6 +33,7 @@ public class TcpServerHandler extends Thread {
 
   public void startServer() throws IOException {
     serverSocket = new ServerSocket(port);
+    room = new Room(4);
     // LoggerHandler.logInfoMessage("Server is running on port " + port);
     this.start();
   }
@@ -63,6 +67,18 @@ public class TcpServerHandler extends Thread {
     }
   }
 
+  public void updateRoomSettings(int option, String type) {
+    switch (type) {
+      case TOTAL_CARD:
+        room.setTotalCard(option);
+        break;
+    
+      default:
+        break;
+    }
+    broadcastSettinsEvent(null);
+  }
+
   private synchronized void handleNewClient(Socket clientSocket) {
     String clientUsername;
     try {
@@ -83,6 +99,7 @@ public class TcpServerHandler extends Thread {
     clients.add(handler);
 
     sendPlayerListToClient(handler);
+    sendRoomInfoToClient(handler);
     broadcastPlayerEvent("CONNECTED", clientUsername, handler);
     broadcastPlayerList(handler);
 
@@ -130,6 +147,12 @@ public class TcpServerHandler extends Thread {
     client.sendMessage(json);
   }
 
+  private void sendRoomInfoToClient(ClientHandler client) {
+    Message<Room> msg = new Message<>("SETTING_UPDATE", room);
+    String json = gson.toJson(msg);
+    client.sendMessage(json);
+  }
+
   private void broadcastPlayerList(ClientHandler exclude) {
     List<Player> snapshot = new ArrayList<>(players);
     Message<List<Player>> msg = new Message<>("PLAYER_LIST", snapshot);
@@ -139,6 +162,11 @@ public class TcpServerHandler extends Thread {
   private void broadcastPlayerEvent(String eventType, String username, ClientHandler exclude) {
     PlayerEvent event = new PlayerEvent(eventType, username);
     Message<PlayerEvent> msg = new Message<>("PLAYER_EVENT", event);
+    broadcast(msg, exclude);
+  }
+
+  private void broadcastSettinsEvent(ClientHandler exclude) {
+    Message<Room> msg = new Message<>("SETTING_UPDATE", room);
     broadcast(msg, exclude);
   }
 }

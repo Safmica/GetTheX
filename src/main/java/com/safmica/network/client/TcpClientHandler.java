@@ -17,6 +17,7 @@ import com.safmica.listener.RoomListener;
 import com.safmica.model.Message;
 import com.safmica.model.Player;
 import com.safmica.model.PlayerEvent;
+import com.safmica.model.Room;
 import com.safmica.utils.LoggerHandler;
 
 import javafx.application.Platform;
@@ -35,6 +36,7 @@ public class TcpClientHandler extends Thread {
     public static final String TYPE_PLAYER_EVENT = "PLAYER_EVENT";
     public static final String TYPE_CONNECTED = "CONNECTED";
     public static final String TYPE_DISCONNECTED = "DISCONNECTED";
+    public static final String TYPE_SETTING_UPDATE = "SETTING_UPDATE";
     
     private String username;
 
@@ -141,6 +143,20 @@ public class TcpClientHandler extends Thread {
                                 }
                             });
                         }
+                        break;
+                    }
+
+                    case TYPE_SETTING_UPDATE: {
+                        Type roomType = new TypeToken<Message<Room>>() {
+                        }.getType();
+                        Message<Room> roomInfo = gson.fromJson(line, roomType);
+                        Room room = roomInfo.data;
+                        System.out.println("DEBUG : room" + room.getTotalCard());
+                        Platform.runLater(() -> {
+                            for (RoomListener l : listeners) {
+                                l.onSettingChange(room);
+                            }
+                        });
                         break;
                     }
                     default: {
