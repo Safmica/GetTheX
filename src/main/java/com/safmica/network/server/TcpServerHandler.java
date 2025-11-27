@@ -26,6 +26,7 @@ public class TcpServerHandler extends Thread {
   private final List<ClientHandler> clients = new CopyOnWriteArrayList<>();
   private final List<Player> players = new CopyOnWriteArrayList<>();
   private final String TOTAL_CARD = "TOTAL_CARD";
+  private final String TOTAL_ROUND = "TOTAL_ROUND";
 
   public TcpServerHandler(int port) {
     this.port = port;
@@ -33,7 +34,7 @@ public class TcpServerHandler extends Thread {
 
   public void startServer() throws IOException {
     serverSocket = new ServerSocket(port);
-    room = new Room(4);
+    room = new Room(4, 3);
     // LoggerHandler.logInfoMessage("Server is running on port " + port);
     this.start();
   }
@@ -72,7 +73,9 @@ public class TcpServerHandler extends Thread {
       case TOTAL_CARD:
         room.setTotalCard(option);
         break;
-    
+      case TOTAL_ROUND:
+        room.setTotalRound(option);
+        break;
       default:
         break;
     }

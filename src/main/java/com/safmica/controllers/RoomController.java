@@ -35,6 +35,10 @@ public class RoomController implements RoomListener {
     private Button settingButton;
     @FXML
     private Label totalCard;
+    @FXML
+    private Label totalRound;
+    private int totalRoundNow;
+    private int totalCardNow;
 
     private TcpClientHandler clientHandler;
     private TcpServerHandler server;
@@ -148,6 +152,7 @@ public class RoomController implements RoomListener {
     public void onSettingChange(Room room) {
         Platform.runLater(() -> {
             totalCard.setText("Total Cards = " + room.getTotalCard());
+            totalRound.setText("Total Rounds = " + room.getTotalRound());
         });
     }
 
@@ -165,7 +170,8 @@ public class RoomController implements RoomListener {
     @FXML
     private void handleSetting() {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/safmica/views/components/room_settings.fxml"));
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/safmica/views/components/room_settings.fxml"));
             Parent root = loader.load();
 
             RoomSettingsController controller = loader.getController();
@@ -179,12 +185,25 @@ public class RoomController implements RoomListener {
 
             if (controller.isSaved()) {
                 int newTotalCard = controller.getSelectedTotalCard();
-                if (newTotalCard < 4 || newTotalCard > 6) {
-                    System.out.println("DEBUG : TOTAL CARD MUST BETWEEN 4-6");
-                    return;
+                int newTotalRound = controller.getSelectedTotalRound();
+                if (newTotalCard != totalCardNow) {
+                    if (newTotalCard < 4 || newTotalCard > 6) {
+                        System.out.println("DEBUG : TOTAL CARD MUST BETWEEN 4-6");
+                        return;
+                    }
+                    server.updateRoomSettings(newTotalCard, "TOTAL_CARD");
                 }
-                server.updateRoomSettings(newTotalCard, "TOTAL_CARD");
-                System.out.println("Settings saved: Total Cards = " + newTotalCard);
+                if (newTotalRound != totalRoundNow) {
+                    if (newTotalRound < 3 || newTotalRound > 15) {
+                        System.out.println("DEBUG : TOTAL ROUND MUST BETWEEN 3-15");
+                        return;
+                    } else if (newTotalRound%2==0) {
+                        System.out.println("DEBUG : TOTAL ROUND MUST BE AN ODD NUMBER");
+                        return;
+                    }
+                    server.updateRoomSettings(newTotalRound, "TOTAL_ROUND");
+                }
+                System.out.println("Settings saved: Total Rounds = " + newTotalRound);
             }
 
         } catch (IOException e) {

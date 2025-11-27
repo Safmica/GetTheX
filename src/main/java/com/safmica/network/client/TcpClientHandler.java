@@ -151,7 +151,8 @@ public class TcpClientHandler extends Thread {
                         }.getType();
                         Message<Room> roomInfo = gson.fromJson(line, roomType);
                         Room room = roomInfo.data;
-                        System.out.println("DEBUG : room" + room.getTotalCard());
+                        System.out.println("DEBUG : total cards" + room.getTotalCard());
+                        System.out.println("DEBUG : total rounds" + room.getTotalRound());
                         Platform.runLater(() -> {
                             for (RoomListener l : listeners) {
                                 l.onSettingChange(room);

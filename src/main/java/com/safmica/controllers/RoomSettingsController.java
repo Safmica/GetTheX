@@ -8,22 +8,31 @@ public class RoomSettingsController {
 
     @FXML
     private Spinner<Integer> totalCardSpinner;
-    
+    @FXML
+    private Spinner<Integer> totalRoundSpinner;
+
     private int selectedTotalCard;
+    private int selectedTotalRound;
     private boolean saved = false;
 
     @FXML
     private void initialize() {
         selectedTotalCard = 4;
+        selectedTotalRound = 3;
     }
 
     public void setCurrentTotalCard(int totalCard) {
         totalCardSpinner.getValueFactory().setValue(totalCard);
     }
 
+    public void setCurrentTotalRound(int totalRound) {
+        totalRoundSpinner.getValueFactory().setValue(totalRound);
+    }
+
     @FXML
     private void handleSave() {
         selectedTotalCard = totalCardSpinner.getValue();
+        selectedTotalRound = totalRoundSpinner.getValue();
         saved = true;
         closeWindow();
     }
@@ -41,6 +50,10 @@ public class RoomSettingsController {
 
     public int getSelectedTotalCard() {
         return selectedTotalCard;
+    }
+
+    public int getSelectedTotalRound() {
+        return selectedTotalRound;
     }
 
     public boolean isSaved() {
