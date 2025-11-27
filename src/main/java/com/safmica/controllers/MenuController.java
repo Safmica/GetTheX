@@ -7,7 +7,7 @@ import java.io.IOException;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 
-public class MenuControllers {
+public class MenuController {
 
   @FXML
   private void switchToServer() {

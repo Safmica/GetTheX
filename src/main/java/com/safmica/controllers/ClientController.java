@@ -10,7 +10,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.control.TextField;
 
-public class ClientControllers {
+public class ClientController {
   @FXML
   private TextField usernameField;
   @FXML
