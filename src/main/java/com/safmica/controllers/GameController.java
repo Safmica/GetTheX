@@ -36,6 +36,7 @@ public class GameController {
 
     private List<Integer> cards = new ArrayList<>();
     private List<Button> cardButtons = new ArrayList<>();
+    private List<Boolean> cardUsed = new ArrayList<>();
 
     @FXML
     private void initialize() {
@@ -47,18 +48,22 @@ public class GameController {
         cardsContainer.getChildren().clear();
         cardButtons.clear();
         cards.clear();
+        cardUsed.clear();
 
         int[] sampleCards = {1, 7, 8, 0, 3, 3};
         
         for (int i = 0; i < totalCards && i < sampleCards.length; i++) {
             int cardValue = sampleCards[i];
             cards.add(cardValue);
+            cardUsed.add(false); 
             
             Button cardButton = new Button(String.valueOf(cardValue));
             cardButton.getStyleClass().add("card-button");
             cardButton.setPrefWidth(80);
             cardButton.setPrefHeight(100);
-            cardButton.setOnAction(e -> handleCardClick(cardValue));
+            
+            final int cardIndex = i;
+            cardButton.setOnAction(e -> handleCardClick(cardValue, cardIndex, cardButton));
             
             cardButtons.add(cardButton);
             cardsContainer.getChildren().add(cardButton);
@@ -116,13 +121,20 @@ public class GameController {
     }
 
     @FXML
-    private void handleCardClick(int cardValue) {
+    private void handleCardClick(int cardValue, int cardIndex, Button cardButton) {
+        if (cardUsed.get(cardIndex)) {
+            return;
+        }
+        
         String currentAnswer = answerField.getText();
         if (currentAnswer.isEmpty()) {
             answerField.setText(String.valueOf(cardValue));
         } else {
             answerField.setText(currentAnswer + "+" + cardValue);
         }
+        
+        cardUsed.set(cardIndex, true);
+        cardButton.setDisable(true);
     }
 
     @FXML
@@ -140,6 +152,11 @@ public class GameController {
     @FXML
     private void handleClear() {
         answerField.clear();
+        
+        for (int i = 0; i < cardButtons.size(); i++) {
+            cardUsed.set(i, false);
+            cardButtons.get(i).setDisable(false);
+        }
     }
 
     @FXML
