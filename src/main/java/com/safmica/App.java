@@ -32,6 +32,10 @@ public class App extends Application {
         scene.setRoot(root);
     }
 
+    public static FXMLLoader getFXMLLoader(String fxml) {
+        return new FXMLLoader(App.class.getResource("/com/safmica/views/" + fxml + ".fxml"));
+    }
+
     private static Parent loadFXML(String fxml) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource("/com/safmica/views/" + fxml + ".fxml"));
         return fxmlLoader.load();

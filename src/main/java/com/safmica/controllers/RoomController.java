@@ -43,6 +43,8 @@ public class RoomController implements RoomListener {
     private TcpClientHandler clientHandler;
     private TcpServerHandler server;
     private boolean isHost;
+    private GameController game;
+    private Room room;
     private final ObservableList<Player> players = FXCollections.observableArrayList();
 
     @FXML
@@ -126,11 +128,17 @@ public class RoomController implements RoomListener {
     @Override
     public void onGameStart() {
         Platform.runLater(() -> {
-        try {
-            App.setRoot("game");
-        } catch (IOException | IllegalStateException e) {
-            LoggerHandler.logFXMLFailed("Game", e);
-        }
+            try {
+                FXMLLoader loader = App.getFXMLLoader("game");
+                Parent root = loader.load();
+                
+                GameController gameController = loader.getController();
+                gameController.initializeGame(room, players);
+                
+                App.setRoot(root);
+            } catch (IOException | IllegalStateException e) {
+                LoggerHandler.logFXMLFailed("Game", e);
+            }
         });
     }
 
@@ -161,6 +169,7 @@ public class RoomController implements RoomListener {
 
     @Override
     public void onSettingChange(Room room) {
+        this.room = room;
         Platform.runLater(() -> {
             totalCard.setText("Total Cards = " + room.getTotalCard());
             totalRound.setText("Total Rounds = " + room.getTotalRound());
