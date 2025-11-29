@@ -1,6 +1,7 @@
 package com.safmica.network.server;
 
 import com.google.gson.Gson;
+import com.safmica.model.Game;
 import com.safmica.model.Message;
 import com.safmica.model.Player;
 import com.safmica.model.PlayerEvent;
@@ -23,6 +24,7 @@ public class TcpServerHandler extends Thread {
   private Gson gson = new com.google.gson.Gson();
   private boolean isRunning = true;
   private Room room;
+  private Game game = new Game();
   private final List<ClientHandler> clients = new CopyOnWriteArrayList<>();
   private final List<Player> players = new CopyOnWriteArrayList<>();
   private final String TOTAL_CARD = "TOTAL_CARD";
@@ -137,6 +139,17 @@ public class TcpServerHandler extends Thread {
       }
     }
     return removedHandler || removedUser;
+  }
+
+  public void randomizeCards() {
+    List<Integer> cards = new ArrayList<>();
+    for (int x = 0; x < room.getTotalCard(); x++) {
+      cards.add((int) (Math.random() * 10));
+    }
+    game.setCards(cards);
+    game.setX((int)(Math.random() * 26) + 15);
+    Message<Game> dataCards = new Message<>("CARDS_BROADCAST", game);
+    broadcast(dataCards, null);
   }
 
   private void broadcast(Message<?> message, ClientHandler exclude) {

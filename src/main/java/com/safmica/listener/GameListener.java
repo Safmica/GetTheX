@@ -1,5 +1,7 @@
 package com.safmica.listener;
 
-public interface GameListener {
+import com.safmica.model.Game;
 
+public interface GameListener {
+    void onCardsBroadcast(Game game);
 }

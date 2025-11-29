@@ -13,7 +13,9 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 
+import com.safmica.listener.GameListener;
 import com.safmica.listener.RoomListener;
+import com.safmica.model.Game;
 import com.safmica.model.Message;
 import com.safmica.model.Player;
 import com.safmica.model.PlayerEvent;
@@ -30,7 +32,8 @@ public class TcpClientHandler extends Thread {
     private Gson gson;
     private BufferedReader in;
     private PrintWriter out;
-    private List<RoomListener> listeners = new CopyOnWriteArrayList<>();
+    private List<RoomListener> roomListeners = new CopyOnWriteArrayList<>();
+    private List<GameListener> gameListeners = new CopyOnWriteArrayList<>();
 
     public static final String TYPE_PLAYER_LIST = "PLAYER_LIST";
     public static final String TYPE_PLAYER_EVENT = "PLAYER_EVENT";
@@ -38,6 +41,7 @@ public class TcpClientHandler extends Thread {
     public static final String TYPE_DISCONNECTED = "DISCONNECTED";
     public static final String TYPE_SETTING_UPDATE = "SETTING_UPDATE";
     public static final String TYPE_GAME_START = "GAME_START";
+    public static final String TYPE_CARDS_BROADCAST = "CARDS_BROADCAST";
     
     private String username;
 
@@ -53,11 +57,19 @@ public class TcpClientHandler extends Thread {
     }
 
     public void addRoomListener(RoomListener l) {
-        listeners.add(l);
+        roomListeners.add(l);
     }
 
     public void removeRoomListener(RoomListener l) {
-        listeners.remove(l);
+        roomListeners.remove(l);
+    }
+
+    public void addGameListener(GameListener l) {
+        gameListeners.add(l);
+    }
+
+    public void removeGameListener(GameListener l) {
+        gameListeners.remove(l);
     }
 
     public void startClient(String username) {
@@ -121,7 +133,7 @@ public class TcpClientHandler extends Thread {
                         List<Player> users = listMsg.data;
                         System.out.println("user" + users);
                         Platform.runLater(() -> {
-                            for (RoomListener l : listeners) {
+                            for (RoomListener l : roomListeners) {
                                 l.onPlayerListChanged(users);
                             }
                         });
@@ -135,7 +147,7 @@ public class TcpClientHandler extends Thread {
                         if (eventMsg != null && eventMsg.data != null) {
                             PlayerEvent event = eventMsg.data;
                             Platform.runLater(() -> {
-                                for (RoomListener l : listeners) {
+                                for (RoomListener l : roomListeners) {
                                     if (event.getEventType().equals(TYPE_CONNECTED)) {
                                         l.onPlayerConnected(event.getUsername());
                                     } else if (event.getEventType().equals(TYPE_DISCONNECTED)) {
@@ -155,7 +167,7 @@ public class TcpClientHandler extends Thread {
                         System.out.println("DEBUG : total cards" + room.getTotalCard());
                         System.out.println("DEBUG : total rounds" + room.getTotalRound());
                         Platform.runLater(() -> {
-                            for (RoomListener l : listeners) {
+                            for (RoomListener l : roomListeners) {
                                 l.onSettingChange(room);
                             }
                         });
@@ -164,8 +176,19 @@ public class TcpClientHandler extends Thread {
                     case TYPE_GAME_START: {
                         System.out.println("GAME START");
                         Platform.runLater(() -> {
-                            for (RoomListener l : listeners) {
+                            for (RoomListener l : roomListeners) {
                                 l.onGameStart();
+                            }
+                        });
+                        break;
+                    }
+                    case TYPE_CARDS_BROADCAST: {
+                        Type gameType = new TypeToken<Message<Game>>() {
+                        }.getType();
+                        Message<Game> game = gson.fromJson(line, gameType);
+                        Platform.runLater(() -> {
+                            for (GameListener l : gameListeners) {
+                                l.onCardsBroadcast(game.data);
                             }
                         });
                         break;

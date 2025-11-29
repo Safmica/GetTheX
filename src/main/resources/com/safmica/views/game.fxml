@@ -62,8 +62,8 @@
             <Label text="Total" styleClass="score-header"/>
             <Label fx:id="totalScoreLabel" text="22" styleClass="total-score"/>
             
-            <Label text="GOT THE" styleClass="score-header"/>
-            <Label fx:id="targetScoreLabel" text="44" styleClass="target-score"/>
+            <Label text="x = " styleClass="score-header"/>
+            <Label fx:id="x" styleClass="target-score"/>
             
             <ScrollPane fitToWidth="true" styleClass="players-scroll">
                 <VBox fx:id="playersContainer" spacing="5.0">

@@ -1,5 +1,6 @@
 package com.safmica.controllers;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -10,13 +11,18 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.geometry.Pos;
 
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.safmica.listener.GameListener;
+import com.safmica.model.Game;
 import com.safmica.model.Player;
 import com.safmica.model.Room;
+import com.safmica.network.client.TcpClientHandler;
+import com.safmica.network.server.TcpServerHandler;
 
-public class GameController {
+public class GameController implements GameListener{
 
     @FXML
     private Label statusLabel;
@@ -31,22 +37,34 @@ public class GameController {
     @FXML
     private Label totalScoreLabel;
     @FXML
-    private Label targetScoreLabel;
+    private Label x;
     @FXML
     private VBox playersContainer;
     @FXML
     private Label currentPlayerNameLabel;
 
+    private TcpClientHandler client;
+    private TcpServerHandler server;
+    private boolean isHost = true;
+
     private Room room;
+    private Game game;
     private ObservableList<Player> players = FXCollections.observableArrayList();
 
     private List<Integer> cards = new ArrayList<>();
     private List<Button> cardButtons = new ArrayList<>();
     private List<Boolean> cardUsed = new ArrayList<>();
 
-    public void initializeGame(Room room, ObservableList<Player> players) {
+    public void initializeGame(Room room, ObservableList<Player> players, TcpServerHandler server, TcpClientHandler client) {
         this.room = room;
         this.players = players;
+        this.server = server;
+        this.client = client;
+        if (server != null) {
+            isHost = true;
+            server.randomizeCards();
+        }
+        client.addGameListener(this);
         startRound();
     }
 
@@ -58,7 +76,6 @@ public class GameController {
     }
 
     private void startRound() {
-        setCards();
         setPlayers();
     }
 
@@ -67,10 +84,10 @@ public class GameController {
         cardButtons.clear();
         cards.clear();
         cardUsed.clear();
+        cards = game.getCards();
 
         for (int i = 0; i < room.getTotalCard(); i++) {
-            int cardValue = (int)(Math.random() * 10);
-            cards.add(cardValue);
+            int cardValue = cards.get(i);
             cardUsed.add(false);
 
             Button cardButton = new Button(String.valueOf(cardValue));
@@ -84,6 +101,10 @@ public class GameController {
             cardButtons.add(cardButton);
             cardsContainer.getChildren().add(cardButton);
         }
+
+        Platform.runLater(() -> {
+            x.setText(Integer.toString(game.getX()));
+        });
     }
 
     private void setPlayers() {
@@ -107,6 +128,12 @@ public class GameController {
             playerBox.getChildren().addAll(avatarLabel, nameLabel);
             playersContainer.getChildren().add(playerBox);
         }
+    }
+
+    @Override
+    public void onCardsBroadcast (Game game) {
+        this.game = game;
+        setCards();
     }
 
     @FXML

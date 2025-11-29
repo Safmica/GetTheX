@@ -43,7 +43,6 @@ public class RoomController implements RoomListener {
     private TcpClientHandler clientHandler;
     private TcpServerHandler server;
     private boolean isHost;
-    private GameController game;
     private Room room;
     private final ObservableList<Player> players = FXCollections.observableArrayList();
 
@@ -133,7 +132,7 @@ public class RoomController implements RoomListener {
                 Parent root = loader.load();
                 
                 GameController gameController = loader.getController();
-                gameController.initializeGame(room, players);
+                gameController.initializeGame(room, players, isHost ? server : null, clientHandler);
                 
                 App.setRoot(root);
             } catch (IOException | IllegalStateException e) {
