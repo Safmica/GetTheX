@@ -82,6 +82,11 @@ public class TcpServerHandler extends Thread {
     broadcastSettinsEvent(null);
   }
 
+  public void startGame() {
+    Message<String> gameStart = new Message<>("GAME_START", null);
+    broadcast(gameStart, null);
+  }
+
   private synchronized void handleNewClient(Socket clientSocket) {
     String clientUsername;
     try {

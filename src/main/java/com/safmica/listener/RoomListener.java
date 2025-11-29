@@ -9,4 +9,5 @@ public interface RoomListener {
     void onPlayerConnected(String username);
     void onPlayerDisconnected(String username);
     void onSettingChange(Room room);
+    void onGameStart();
 }

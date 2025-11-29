@@ -37,6 +37,7 @@ public class TcpClientHandler extends Thread {
     public static final String TYPE_CONNECTED = "CONNECTED";
     public static final String TYPE_DISCONNECTED = "DISCONNECTED";
     public static final String TYPE_SETTING_UPDATE = "SETTING_UPDATE";
+    public static final String TYPE_GAME_START = "GAME_START";
     
     private String username;
 
@@ -156,6 +157,15 @@ public class TcpClientHandler extends Thread {
                         Platform.runLater(() -> {
                             for (RoomListener l : listeners) {
                                 l.onSettingChange(room);
+                            }
+                        });
+                        break;
+                    }
+                    case TYPE_GAME_START: {
+                        System.out.println("GAME START");
+                        Platform.runLater(() -> {
+                            for (RoomListener l : listeners) {
+                                l.onGameStart();
                             }
                         });
                         break;

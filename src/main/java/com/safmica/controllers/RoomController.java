@@ -124,6 +124,17 @@ public class RoomController implements RoomListener {
     }
 
     @Override
+    public void onGameStart() {
+        Platform.runLater(() -> {
+        try {
+            App.setRoot("game");
+        } catch (IOException | IllegalStateException e) {
+            LoggerHandler.logFXMLFailed("Game", e);
+        }
+        });
+    }
+
+    @Override
     public void onPlayerDisconnected(String username) {
         Platform.runLater(() -> {
             System.out.println(username + " left the room");
@@ -163,13 +174,7 @@ public class RoomController implements RoomListener {
             return;
         }
 
-        // TODO : BROADCAST TO CLIENT
-        try {
-            App.setRoot("game");
-        } catch (IOException | IllegalStateException e) {
-            LoggerHandler.logFXMLFailed("Game", e);
-        }
-        // TODO: Implement start game logic
+        server.startGame();
     }
 
     @FXML
