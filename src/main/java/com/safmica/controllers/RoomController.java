@@ -40,6 +40,7 @@ public class RoomController implements RoomListener {
     private int totalRoundNow;
     private int totalCardNow;
 
+    private String username;
     private TcpClientHandler clientHandler;
     private TcpServerHandler server;
     private boolean isHost;
@@ -54,6 +55,7 @@ public class RoomController implements RoomListener {
 
     public void initAsHost(int port, String username) {
         this.isHost = true;
+        this.username = username;
         server = new TcpServerHandler(port);
 
         try {
@@ -87,7 +89,7 @@ public class RoomController implements RoomListener {
 
     public void initAsClient(String host, int port, String username) {
         this.isHost = false;
-
+        this.username = username;
         connectAsClient(host, port, username);
     }
 
@@ -132,7 +134,7 @@ public class RoomController implements RoomListener {
                 Parent root = loader.load();
                 
                 GameController gameController = loader.getController();
-                gameController.initializeGame(room, players, isHost ? server : null, clientHandler);
+                gameController.initializeGame(username, room, players, isHost ? server : null, clientHandler);
                 
                 App.setRoot(root);
             } catch (IOException | IllegalStateException e) {

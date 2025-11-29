@@ -46,6 +46,7 @@ public class GameController implements GameListener{
     private TcpClientHandler client;
     private TcpServerHandler server;
     private boolean isHost = true;
+    private String username;
 
     private Room room;
     private Game game;
@@ -55,7 +56,8 @@ public class GameController implements GameListener{
     private List<Button> cardButtons = new ArrayList<>();
     private List<Boolean> cardUsed = new ArrayList<>();
 
-    public void initializeGame(Room room, ObservableList<Player> players, TcpServerHandler server, TcpClientHandler client) {
+    public void initializeGame(String username, Room room, ObservableList<Player> players, TcpServerHandler server, TcpClientHandler client) {
+        this.username = username;
         this.room = room;
         this.players = players;
         this.server = server;
@@ -76,6 +78,7 @@ public class GameController implements GameListener{
     }
 
     private void startRound() {
+        setCurrentPlayer();
         setPlayers();
     }
 
@@ -111,6 +114,10 @@ public class GameController implements GameListener{
         playersContainer.getChildren().clear();
 
         for (Player player : players) {
+            if (player.getName().equals(username)) {
+                continue;
+            }
+            
             VBox playerBox = new VBox(5);
             playerBox.setAlignment(Pos.CENTER);
             playerBox.getStyleClass().add("player-card");
@@ -127,6 +134,17 @@ public class GameController implements GameListener{
 
             playerBox.getChildren().addAll(avatarLabel, nameLabel);
             playersContainer.getChildren().add(playerBox);
+        }
+    }
+    
+    private void setCurrentPlayer() {
+        Player currentPlayer = players.stream()
+            .filter(p -> p.getName().equals(username))
+            .findFirst()
+            .orElse(null);
+        
+        if (currentPlayer != null) {
+            currentPlayerNameLabel.setText(currentPlayer.getName() + " (0)");
         }
     }
 
