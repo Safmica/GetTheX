@@ -89,14 +89,18 @@ public class GameController implements GameListener{
         cardUsed.clear();
         cards = game.getCards();
 
-        for (int i = 0; i < room.getTotalCard(); i++) {
+        int totalCards = room.getTotalCard();
+        double cardWidth = totalCards <= 4 ? 80 : (totalCards == 5 ? 70 : 60);
+        double cardHeight = totalCards <= 4 ? 100 : (totalCards == 5 ? 90 : 80);
+
+        for (int i = 0; i < totalCards; i++) {
             int cardValue = cards.get(i);
             cardUsed.add(false);
 
             Button cardButton = new Button(String.valueOf(cardValue));
             cardButton.getStyleClass().add("card-button");
-            cardButton.setPrefWidth(80);
-            cardButton.setPrefHeight(100);
+            cardButton.setPrefWidth(cardWidth);
+            cardButton.setPrefHeight(cardHeight);
 
             final int cardIndex = i;
             cardButton.setOnAction(e -> handleCardClick(cardValue, cardIndex, cardButton));
@@ -104,6 +108,8 @@ public class GameController implements GameListener{
             cardButtons.add(cardButton);
             cardsContainer.getChildren().add(cardButton);
         }
+
+        System.out.println(game.getX());
 
         Platform.runLater(() -> {
             x.setText(Integer.toString(game.getX()));

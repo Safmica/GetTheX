@@ -1,0 +1,22 @@
+.current-player-panel {
+    -fx-background-color: #ffffffff;
+}
+
+.answer-field {
+    -fx-font-size: 24px;
+    -fx-pref-height: 60px;
+}
+
+.x-bar {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 2);
+    -fx-font-weight: bold;
+    -fx-font-size: 15px;
+}
+
+.x-text {
+    -fx-font-weight: bold;
+    -fx-font-size: 30px;
+}
