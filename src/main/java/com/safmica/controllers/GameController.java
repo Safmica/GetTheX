@@ -259,7 +259,6 @@ public class GameController implements GameListener {
     private void handleSubmit() {
         String answer = answerField.getText();
 
-        // Validasi input tidak boleh kosong
         if (answer.trim().isEmpty()) {
             System.out.println("Answer cannot be empty!");
             return;
@@ -317,7 +316,7 @@ public class GameController implements GameListener {
                 } else {
                     throw new IllegalArgumentException("√ must be followed by a number");
                 }
-                i--; // adjust index karena loop akan increment
+                i--;
             } else {
                 result.append(c);
             }
