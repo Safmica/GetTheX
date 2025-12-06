@@ -209,7 +209,7 @@ public class GameController implements GameListener {
                         return;
                     }
                 }
-            } else {
+            } else if (!operator.equals("(") && !operator.equals(")")) {
                 if (currentAnswer.isEmpty()) {
                     return;
                 }
@@ -220,7 +220,7 @@ public class GameController implements GameListener {
                         return;
                     }
                 } else {
-                    if (!Character.isDigit(lastChar) && lastChar != '²') {
+                    if (!Character.isDigit(lastChar) && lastChar != '²' && lastChar != ')') {
                         return;
                     }
                 }
@@ -264,6 +264,12 @@ public class GameController implements GameListener {
             return;
         }
 
+        if (!areParenthesesBalanced(answer)) {
+            System.out.println("Invalid parentheses in expression");
+            currentAnswer.setText("INVALID PARENTHESES");
+            return;
+        }
+
         try {
             double result = calculate(answer);
 
@@ -273,7 +279,7 @@ public class GameController implements GameListener {
             } else {
                 System.out.println("Wrong! " + answer + " = " + result + ", but X = " + game.getX());
             }
-            
+
             totalScoreLabel.setText(String.format("%.2f", result));
             currentAnswer.setText(answer);
             currentPlayerAnswer.setText(username);
@@ -283,11 +289,26 @@ public class GameController implements GameListener {
         }
     }
 
+    private boolean areParenthesesBalanced(String s) {
+        int depth = 0;
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '(')
+                depth++;
+            else if (c == ')') {
+                depth--;
+                if (depth < 0)
+                    return false;
+            }
+        }
+        return depth == 0;
+    }
+
     private double calculate(String expression) {
         if (expression.contains("?") || expression.contains("!") || expression.contains("@") ||
                 expression.contains("#") || expression.contains("$") || expression.contains("%") ||
-                expression.contains("&") || expression.contains("(") || expression.contains(")") ||
-                expression.contains("[") || expression.contains("]") || expression.contains("{") ||
+                expression.contains("&") || expression.contains("[") || expression.contains("]")
+                || expression.contains("{") ||
                 expression.contains("}") || expression.contains("=") || expression.contains("<") ||
                 expression.contains(">") || expression.contains(",") || expression.contains(";") ||
                 expression.contains(":") || expression.contains("'") || expression.contains("\"")) {
@@ -306,17 +327,42 @@ public class GameController implements GameListener {
                 result.append("sqrt(");
 
                 i++;
-                StringBuilder number = new StringBuilder();
-                while (i < expression.length() && Character.isDigit(expression.charAt(i))) {
-                    number.append(expression.charAt(i));
-                    i++;
+                if (i >= expression.length()) {
+                    throw new IllegalArgumentException("√ must be followed by a number or parentheses");
                 }
-                if (number.length() > 0) {
-                    result.append(number).append(")");
+
+                if (expression.charAt(i) == '(') {
+                    int start = i + 1;
+                    int depth = 1;
+                    int j = start;
+                    while (j < expression.length() && depth > 0) {
+                        char cc = expression.charAt(j);
+                        if (cc == '(')
+                            depth++;
+                        else if (cc == ')')
+                            depth--;
+                        j++;
+                    }
+                    if (depth != 0) {
+                        throw new IllegalArgumentException("Unbalanced parentheses after √");
+                    }
+                    String inner = expression.substring(start, j - 1);
+                    result.append(inner).append(")");
+                    i = j - 1;
                 } else {
-                    throw new IllegalArgumentException("√ must be followed by a number");
+                    StringBuilder number = new StringBuilder();
+                    while (i < expression.length()
+                            && (Character.isDigit(expression.charAt(i)) || expression.charAt(i) == '.')) {
+                        number.append(expression.charAt(i));
+                        i++;
+                    }
+                    if (number.length() > 0) {
+                        result.append(number).append(")");
+                        i--;
+                    } else {
+                        throw new IllegalArgumentException("√ must be followed by a number or parentheses");
+                    }
                 }
-                i--;
             } else {
                 result.append(c);
             }
