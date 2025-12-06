@@ -1,6 +1,7 @@
 package com.safmica.model;
 
-class GameAnswerData {
+public class GameAnswer {
     public String answer;
-    public String clientId;
+    public double x;
+    public String username;
 }

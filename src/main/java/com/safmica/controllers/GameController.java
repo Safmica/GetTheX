@@ -11,12 +11,14 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.geometry.Pos;
 
+import net.objecthunter.exp4j.Expression;
+import net.objecthunter.exp4j.ExpressionBuilder;
+
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.safmica.listener.GameListener;
 import com.safmica.model.Game;
+import com.safmica.listener.GameListener;
 import com.safmica.model.Player;
 import com.safmica.model.Room;
 import com.safmica.network.client.TcpClientHandler;
@@ -42,6 +44,10 @@ public class GameController implements GameListener {
     private VBox playersContainer;
     @FXML
     private Label currentPlayerNameLabel;
+    @FXML
+    private Label currentAnswer;
+    @FXML
+    private Label currentPlayerAnswer;
 
     private TcpClientHandler client;
     private TcpServerHandler server;
@@ -252,8 +258,78 @@ public class GameController implements GameListener {
     @FXML
     private void handleSubmit() {
         String answer = answerField.getText();
-        System.out.println("Submitted answer: " + answer);
-        // TODO: Implement answer validation and scoring
+
+        // Validasi input tidak boleh kosong
+        if (answer.trim().isEmpty()) {
+            System.out.println("Answer cannot be empty!");
+            return;
+        }
+
+        try {
+            double result = calculate(answer);
+
+            if (Math.abs(result - game.getX()) < 0.001) {
+                System.out.println("Correct! " + answer + " = " + result);
+                // TODO: Update score, next round
+            } else {
+                System.out.println("Wrong! " + answer + " = " + result + ", but X = " + game.getX());
+            }
+            
+            totalScoreLabel.setText(String.format("%.2f", result));
+            currentAnswer.setText(answer);
+            currentPlayerAnswer.setText(username);
+        } catch (Exception e) {
+            System.out.println("Error calculating: " + answer + " - " + e.getMessage());
+            currentAnswer.setText("ERROR");
+        }
+    }
+
+    private double calculate(String expression) {
+        if (expression.contains("?") || expression.contains("!") || expression.contains("@") ||
+                expression.contains("#") || expression.contains("$") || expression.contains("%") ||
+                expression.contains("&") || expression.contains("(") || expression.contains(")") ||
+                expression.contains("[") || expression.contains("]") || expression.contains("{") ||
+                expression.contains("}") || expression.contains("=") || expression.contains("<") ||
+                expression.contains(">") || expression.contains(",") || expression.contains(";") ||
+                expression.contains(":") || expression.contains("'") || expression.contains("\"")) {
+            throw new IllegalArgumentException("Invalid characters in expression");
+        }
+
+        expression = expression.replace("×", "*")
+                .replace("÷", "/");
+
+        expression = expression.replace("²", "^2");
+
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < expression.length(); i++) {
+            char c = expression.charAt(i);
+            if (c == '√') {
+                result.append("sqrt(");
+
+                i++;
+                StringBuilder number = new StringBuilder();
+                while (i < expression.length() && Character.isDigit(expression.charAt(i))) {
+                    number.append(expression.charAt(i));
+                    i++;
+                }
+                if (number.length() > 0) {
+                    result.append(number).append(")");
+                } else {
+                    throw new IllegalArgumentException("√ must be followed by a number");
+                }
+                i--; // adjust index karena loop akan increment
+            } else {
+                result.append(c);
+            }
+        }
+        expression = result.toString();
+
+        try {
+            Expression exp = new ExpressionBuilder(expression).build();
+            return exp.evaluate();
+        } catch (Exception e) {
+            throw new RuntimeException("Invalid mathematical expression: " + e.getMessage());
+        }
     }
 
     @FXML
