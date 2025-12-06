@@ -22,7 +22,7 @@ import com.safmica.model.Room;
 import com.safmica.network.client.TcpClientHandler;
 import com.safmica.network.server.TcpServerHandler;
 
-public class GameController implements GameListener{
+public class GameController implements GameListener {
 
     @FXML
     private Label statusLabel;
@@ -56,7 +56,8 @@ public class GameController implements GameListener{
     private List<Button> cardButtons = new ArrayList<>();
     private List<Boolean> cardUsed = new ArrayList<>();
 
-    public void initializeGame(String username, Room room, ObservableList<Player> players, TcpServerHandler server, TcpClientHandler client) {
+    public void initializeGame(String username, Room room, ObservableList<Player> players, TcpServerHandler server,
+            TcpClientHandler client) {
         this.username = username;
         this.room = room;
         this.players = players;
@@ -123,7 +124,7 @@ public class GameController implements GameListener{
             if (player.getName().equals(username)) {
                 continue;
             }
-            
+
             VBox playerBox = new VBox(5);
             playerBox.setAlignment(Pos.CENTER);
             playerBox.getStyleClass().add("player-card");
@@ -142,20 +143,20 @@ public class GameController implements GameListener{
             playersContainer.getChildren().add(playerBox);
         }
     }
-    
+
     private void setCurrentPlayer() {
         Player currentPlayer = players.stream()
-            .filter(p -> p.getName().equals(username))
-            .findFirst()
-            .orElse(null);
-        
+                .filter(p -> p.getName().equals(username))
+                .findFirst()
+                .orElse(null);
+
         if (currentPlayer != null) {
             currentPlayerNameLabel.setText(currentPlayer.getName() + " (0)");
         }
     }
 
     @Override
-    public void onCardsBroadcast (Game game) {
+    public void onCardsBroadcast(Game game) {
         this.game = game;
         setCards();
     }
@@ -167,10 +168,21 @@ public class GameController implements GameListener{
         }
 
         String currentAnswer = answerField.getText();
+
+        if (!currentAnswer.isEmpty()) {
+            char lastChar = currentAnswer.charAt(currentAnswer.length() - 1);
+            if (Character.isDigit(lastChar)) {
+                return;
+            }
+            if (lastChar == '²') {
+                return;
+            }
+        }
+
         if (currentAnswer.isEmpty()) {
             answerField.setText(String.valueOf(cardValue));
         } else {
-            answerField.setText(currentAnswer + "+" + cardValue);
+            answerField.setText(currentAnswer + cardValue);
         }
 
         cardUsed.set(cardIndex, true);
@@ -183,9 +195,41 @@ public class GameController implements GameListener{
         if (button != null) {
             String operator = button.getText();
             String currentAnswer = answerField.getText();
-            if (!currentAnswer.isEmpty()) {
-                answerField.setText(currentAnswer + operator);
+
+            if (operator.equals("√x")) {
+                if (!currentAnswer.isEmpty()) {
+                    char lastChar = currentAnswer.charAt(currentAnswer.length() - 1);
+                    if (Character.isDigit(lastChar) || lastChar == '√' || lastChar == '²') {
+                        return;
+                    }
+                }
+            } else {
+                if (currentAnswer.isEmpty()) {
+                    return;
+                }
+                char lastChar = currentAnswer.charAt(currentAnswer.length() - 1);
+
+                if (operator.equals("x²")) {
+                    if (!Character.isDigit(lastChar)) {
+                        return;
+                    }
+                } else {
+                    if (!Character.isDigit(lastChar) && lastChar != '²') {
+                        return;
+                    }
+                }
             }
+
+            switch (operator) {
+                case "√x":
+                    operator = "√";
+                    break;
+                case "x²":
+                    operator = "²";
+                    break;
+            }
+
+            answerField.setText(currentAnswer + operator);
         }
     }
 
