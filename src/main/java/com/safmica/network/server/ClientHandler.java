@@ -5,17 +5,10 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
-import com.safmica.listener.GameListener;
-import com.safmica.listener.RoomListener;
-import com.safmica.model.Game;
 import com.safmica.model.GameAnswer;
 import com.safmica.model.Message;
-import com.safmica.model.Player;
-import com.safmica.model.PlayerEvent;
-import com.safmica.model.Room;
 import com.safmica.utils.LoggerHandler;
 
-import javafx.application.Platform;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,7 +17,7 @@ import java.io.PrintWriter;
 import java.lang.reflect.Type;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.List;
+ 
 
 public class ClientHandler extends Thread {
     private final TcpServerHandler server;
@@ -77,11 +70,21 @@ public class ClientHandler extends Thread {
 
                 switch (type) {
                     case TYPE_GAME_ANSWER: {
+                        System.out.println("SERVER GOT SUBMIT");
                         Type listType = new TypeToken<Message<GameAnswer>>() {
                         }.getType();
                         Message<GameAnswer> listMsg = gson.fromJson(line, listType);
                         GameAnswer listAnswers = listMsg.data;
-                        server.checkAnswer()
+                        if (listAnswers != null) {
+                            if (listAnswers.username == null || listAnswers.username.isEmpty()) {
+                                listAnswers.username = this.username;
+                            }
+                            server.enqueueAnswer(listAnswers);
+
+                            Message<String> ack = new Message<>("SUBMIT_ACK", "RECEIVED");
+                            String ackJson = gson.toJson(ack);
+                            sendMessage(ackJson);
+                        }
                         break;
                     }
                     default: {
@@ -141,6 +144,11 @@ public class ClientHandler extends Thread {
         } catch (Exception e) {
             // todo: give some handle
         }
+    }
+
+    public boolean usernameEquals(String other) {
+        if (other == null) return false;
+        return other.equals(this.username);
     }
 
     public boolean isConnected() {

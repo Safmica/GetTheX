@@ -89,3 +89,7 @@
     -fx-font-weight: bolder;
     -fx-alignment: center;
 }
+
+.notification-label {
+    -fx-font-weight: bold;
+}

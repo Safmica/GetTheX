@@ -44,6 +44,7 @@ public class TcpClientHandler extends Thread {
     public static final String TYPE_SETTING_UPDATE = "SETTING_UPDATE";
     public static final String TYPE_GAME_START = "GAME_START";
     public static final String TYPE_CARDS_BROADCAST = "CARDS_BROADCAST";
+    public static final String TYPE_SUBMIT_ACK = "SUBMIT_ACK";
 
     private String username;
 
@@ -191,6 +192,18 @@ public class TcpClientHandler extends Thread {
                         Platform.runLater(() -> {
                             for (GameListener l : gameListeners) {
                                 l.onCardsBroadcast(game.data);
+                            }
+                        });
+                        break;
+                    }
+                    case TYPE_SUBMIT_ACK: {
+                        System.out.println("CLIENT GOT ACK");
+                        Type stringType = new TypeToken<Message<String>>() {
+                        }.getType();
+                        Message<String> msg = gson.fromJson(line, stringType);
+                        Platform.runLater(() -> {
+                            for (GameListener l : gameListeners) {
+                                l.onSubmitAck(msg.data);
                             }
                         });
                         break;

@@ -166,4 +166,6 @@
         </padding>
     </VBox>
 
+    <StackPane fx:id="overlay" pickOnBounds="false" StackPane.alignment="TOP_CENTER" maxHeight="60" maxWidth="300"/>
+
 </StackPane>

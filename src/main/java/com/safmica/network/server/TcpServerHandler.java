@@ -2,6 +2,7 @@ package com.safmica.network.server;
 
 import com.google.gson.Gson;
 import com.safmica.model.Game;
+import com.safmica.model.GameAnswer;
 import com.safmica.model.Message;
 import com.safmica.model.Player;
 import com.safmica.model.PlayerEvent;
@@ -25,6 +26,7 @@ public class TcpServerHandler extends Thread {
   private boolean isRunning = true;
   private Room room;
   private Game game = new Game();
+  private SubmissionProcessor submissionProcessor;
   private final List<ClientHandler> clients = new CopyOnWriteArrayList<>();
   private final List<Player> players = new CopyOnWriteArrayList<>();
   private final String TOTAL_CARD = "TOTAL_CARD";
@@ -37,6 +39,8 @@ public class TcpServerHandler extends Thread {
   public void startServer() throws IOException {
     serverSocket = new ServerSocket(port);
     room = new Room(4, 3);
+
+    submissionProcessor = new SubmissionProcessor(this);
     // LoggerHandler.logInfoMessage("Server is running on port " + port);
     this.start();
   }
@@ -52,6 +56,10 @@ public class TcpServerHandler extends Thread {
     } catch (IOException e) {
       LoggerHandler.logError("Error closing Client socket.", e);
     }
+
+    try {
+      if (submissionProcessor != null) submissionProcessor.shutdown();
+    } catch (Exception ignored) {}
   }
 
   @Override
@@ -116,6 +124,28 @@ public class TcpServerHandler extends Thread {
     handler.start();
     System.out.println("CLIENT JOIN = " + clientUsername + (isHost ? " (HOST)" : ""));
     // TODO: remove this debug
+  }
+
+  public void enqueueAnswer(GameAnswer answer) {
+    if (submissionProcessor != null) submissionProcessor.enqueue(answer);
+  }
+
+  public Game getGame() {
+    return game;
+  }
+
+  public void broadcastMessage(Message<?> message) {
+    broadcast(message, null);
+  }
+
+  public void sendToClient(String username, Message<?> message) {
+    String json = gson.toJson(message);
+    for (ClientHandler handler : clients) {
+      if (handler != null && handler.isConnected() && handler.usernameEquals(username)) {
+        handler.sendMessage(json);
+        return;
+      }
+    }
   }
 
   public synchronized boolean unregisterClient(String username, ClientHandler handler) {

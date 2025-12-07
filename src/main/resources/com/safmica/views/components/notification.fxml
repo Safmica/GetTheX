@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<AnchorPane xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.safmica.controllers.NotificationController"
+            prefHeight="60.0" prefWidth="300.0" style="-fx-background-color: transparent;">
+    <children>
+        <AnchorPane fx:id="rootPane" style="-fx-background-color: #333333; -fx-background-radius: 6; -fx-padding: 8;"
+                    prefHeight="60.0" prefWidth="300.0">
+            <children>
+                <Label fx:id="messageLabel" text="Notification message" wrapText="true" styleClass="notification-label"
+                       style="-fx-text-fill: white; -fx-font-size: 14px;" AnchorPane.leftAnchor="8.0" AnchorPane.rightAnchor="8.0"
+                       AnchorPane.topAnchor="8.0" AnchorPane.bottomAnchor="8.0" alignment="CENTER"/>
+            </children>
+        </AnchorPane>
+    </children>
+</AnchorPane>

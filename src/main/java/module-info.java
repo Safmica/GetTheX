@@ -1,6 +1,7 @@
 module com.safmica {
   requires javafx.controls;
   requires javafx.fxml;
+  requires transitive javafx.graphics;
   requires java.logging;
   requires com.google.gson;
   requires exp4j;

@@ -9,6 +9,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.StackPane;
 import javafx.geometry.Pos;
 
 import net.objecthunter.exp4j.Expression;
@@ -24,6 +25,7 @@ import com.safmica.model.Player;
 import com.safmica.model.Room;
 import com.safmica.network.client.TcpClientHandler;
 import com.safmica.network.server.TcpServerHandler;
+import com.safmica.utils.ui.NotificationUtil;
 
 public class GameController implements GameListener {
 
@@ -44,6 +46,8 @@ public class GameController implements GameListener {
     @FXML
     private VBox playersContainer;
     @FXML
+    private StackPane overlay;
+    @FXML
     private Label currentPlayerNameLabel;
     @FXML
     private Label currentAnswer;
@@ -57,7 +61,7 @@ public class GameController implements GameListener {
 
     private Room room;
     private Game game;
-    private GameAnswer gameAnswer;
+    private GameAnswer gameAnswer = new GameAnswer();
     private ObservableList<Player> players = FXCollections.observableArrayList();
 
     private List<Integer> cards = new ArrayList<>();
@@ -167,6 +171,14 @@ public class GameController implements GameListener {
     public void onCardsBroadcast(Game game) {
         this.game = game;
         setCards();
+    }
+
+    @Override
+    public void onSubmitAck(String msg) {
+        if (msg.toUpperCase().equals("RECEIVED")) {
+            if (overlay != null) NotificationUtil.showSuccess(overlay, msg);
+            else NotificationUtil.showSuccess(cardsContainer, msg);
+        }
     }
 
     @FXML
