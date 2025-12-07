@@ -39,7 +39,8 @@ public class SubmissionProcessor {
     }
 
     public void enqueue(GameAnswer answer) {
-        if (!running) return;
+        if (!running)
+            return;
         answerQueue.offer(answer);
     }
 
@@ -47,7 +48,8 @@ public class SubmissionProcessor {
         while (running) {
             try {
                 GameAnswer answer = answerQueue.take();
-                if (answer == null) continue;
+                if (answer == null)
+                    continue;
                 if (answer.round != game.getRound()) {
                     sendAck(answer, "ROUND_OVER");
                     continue;
@@ -80,6 +82,8 @@ public class SubmissionProcessor {
                 if (correct) {
                     game.nextRound();
                     answerQueue.clear();
+                    submitCount.clear();
+                    cooldownUntil.clear();
                 }
 
             } catch (InterruptedException e) {
@@ -94,7 +98,8 @@ public class SubmissionProcessor {
     private boolean evaluateAnswer(GameAnswer answer) {
         try {
             Game game = server.getGame();
-            if (game == null) return false;
+            if (game == null)
+                return false;
 
             String expr = sanitizeExpression(answer.answer);
 
@@ -109,13 +114,14 @@ public class SubmissionProcessor {
     }
 
     private String sanitizeExpression(String input) {
-        if (input == null) return "0";
+        if (input == null)
+            return "0";
         String s = input.replaceAll("×", "*")
                 .replaceAll("÷", "/")
                 .replaceAll("²", "^2");
 
         s = s.replaceAll("√\\(", "(");
-        while (s.contains("(")) { 
+        while (s.contains("(")) {
             break;
         }
 
@@ -135,7 +141,8 @@ public class SubmissionProcessor {
         while (running) {
             try {
                 GameAnswer toBroadcast = broadcastQueue.take();
-                if (toBroadcast == null) continue;
+                if (toBroadcast == null)
+                    continue;
 
                 Message<GameAnswer> m = new Message<>("GAME_RESULT", toBroadcast);
                 server.broadcastMessage(m);
@@ -144,8 +151,6 @@ public class SubmissionProcessor {
                     Thread.sleep(TimeUnit.SECONDS.toMillis(5));
                 } else {
                     Thread.sleep(TimeUnit.SECONDS.toMillis(10));
-                    submitCount.clear();
-                    cooldownUntil.clear();
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
