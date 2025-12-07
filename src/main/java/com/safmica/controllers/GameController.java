@@ -18,6 +18,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import com.safmica.model.Game;
+import com.safmica.model.GameAnswer;
 import com.safmica.listener.GameListener;
 import com.safmica.model.Player;
 import com.safmica.model.Room;
@@ -56,6 +57,7 @@ public class GameController implements GameListener {
 
     private Room room;
     private Game game;
+    private GameAnswer gameAnswer;
     private ObservableList<Player> players = FXCollections.observableArrayList();
 
     private List<Integer> cards = new ArrayList<>();
@@ -275,14 +277,15 @@ public class GameController implements GameListener {
 
             if (Math.abs(result - game.getX()) < 0.001) {
                 System.out.println("Correct! " + answer + " = " + result);
-                // TODO: Update score, next round
             } else {
                 System.out.println("Wrong! " + answer + " = " + result + ", but X = " + game.getX());
             }
 
-            totalScoreLabel.setText(String.format("%.2f", result));
-            currentAnswer.setText(answer);
-            currentPlayerAnswer.setText(username);
+            gameAnswer.answer = answer;
+            gameAnswer.username = username;
+            gameAnswer.x = result;
+
+            client.gameMsg(gameAnswer);
         } catch (Exception e) {
             System.out.println("Error calculating: " + answer + " - " + e.getMessage());
             currentAnswer.setText("ERROR");

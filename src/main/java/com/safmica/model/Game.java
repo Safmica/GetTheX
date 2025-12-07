@@ -5,7 +5,7 @@ import java.util.List;
 public class Game {
     private List<Integer> cards;
     private int x;
-    public List<GameAnswer> listAnswer;
+    private GameAnswer currentAnswer;
 
     public List<Integer> getCards() {
         return cards;
@@ -15,8 +15,8 @@ public class Game {
         this.cards = cards;
     }
 
-    public synchronized void setListAnswer(GameAnswer listAnswer) {
-        this.listAnswer.add(listAnswer);
+    public void setCurrentAnswer(GameAnswer currentAnswer) {
+        this.currentAnswer = currentAnswer;
     }
 
     public int getX() {
@@ -25,5 +25,9 @@ public class Game {
 
     public void setX(int x) {
         this.x = x;
+    }
+
+    public GameAnswer getCurrentAnswer() {
+        return currentAnswer;
     }
 }

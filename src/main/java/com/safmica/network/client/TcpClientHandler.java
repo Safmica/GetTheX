@@ -16,10 +16,12 @@ import java.lang.reflect.Type;
 import com.safmica.listener.GameListener;
 import com.safmica.listener.RoomListener;
 import com.safmica.model.Game;
+import com.safmica.model.GameAnswer;
 import com.safmica.model.Message;
 import com.safmica.model.Player;
 import com.safmica.model.PlayerEvent;
 import com.safmica.model.Room;
+import com.safmica.network.server.ClientHandler;
 import com.safmica.utils.LoggerHandler;
 
 import javafx.application.Platform;
@@ -42,14 +44,14 @@ public class TcpClientHandler extends Thread {
     public static final String TYPE_SETTING_UPDATE = "SETTING_UPDATE";
     public static final String TYPE_GAME_START = "GAME_START";
     public static final String TYPE_CARDS_BROADCAST = "CARDS_BROADCAST";
-    
+
     private String username;
 
     public TcpClientHandler(String host, int port) {
         this.host = host;
         this.port = port;
     }
-    
+
     public TcpClientHandler(String host, int port, String username) {
         this.host = host;
         this.port = port;
@@ -76,12 +78,12 @@ public class TcpClientHandler extends Thread {
         this.username = username;
         startClient();
     }
-    
+
     public void startClient() {
         if (username == null) {
             throw new IllegalStateException("Username must be set before starting client");
         }
-        
+
         try {
             client = new Socket(host, port);
             in = new BufferedReader(new InputStreamReader(client.getInputStream()));
@@ -212,6 +214,27 @@ public class TcpClientHandler extends Thread {
         }
     }
 
+    public void gameMsg(GameAnswer answer) {
+        Message<GameAnswer> msg = new Message<>("GAME_ANSWER", answer);
+        msg(msg);
+    }
+
+    private void msg(Message<?> message) {
+        String json = gson.toJson(message);
+        sendMessage(json);
+    }
+
+    public void sendMessage(String message) {
+        try {
+            if (out != null && !client.isClosed()) {
+                out.println(message);
+                out.flush();
+            }
+        } catch (Exception e) {
+            //todo: give some handle
+        }
+    }
+
     private void cleanup() {
         try {
             if (in != null) {
@@ -237,7 +260,7 @@ public class TcpClientHandler extends Thread {
 
     public void stopClient() {
         this.isRunning = false;
-        
+
         new Thread(() -> {
             try {
                 if (client != null && !client.isClosed()) {
@@ -245,12 +268,12 @@ public class TcpClientHandler extends Thread {
                 }
             } catch (IOException e) {
             }
-            
+
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
             }
-            
+
             cleanup();
         }).start();
     }
