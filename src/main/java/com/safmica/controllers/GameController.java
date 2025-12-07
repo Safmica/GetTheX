@@ -328,6 +328,7 @@ public class GameController implements GameListener {
             gameAnswer.answer = answer;
             gameAnswer.username = username;
             gameAnswer.x = result;
+            gameAnswer.round = game.getRound();
 
             client.gameMsg(gameAnswer);
         } catch (Exception e) {

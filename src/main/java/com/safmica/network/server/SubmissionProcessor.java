@@ -15,6 +15,7 @@ public class SubmissionProcessor {
     private final BlockingQueue<GameAnswer> answerQueue = new LinkedBlockingQueue<>();
     private final BlockingQueue<GameAnswer> broadcastQueue = new LinkedBlockingQueue<>();
     private final TcpServerHandler server;
+    private Game game;
 
     private final ConcurrentHashMap<String, Integer> submitCount = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Long> cooldownUntil = new ConcurrentHashMap<>();
@@ -23,8 +24,9 @@ public class SubmissionProcessor {
     private final Thread evaluatorThread;
     private final Thread broadcasterThread;
 
-    public SubmissionProcessor(TcpServerHandler server) {
+    public SubmissionProcessor(TcpServerHandler server, Game game) {
         this.server = server;
+        this.game = game;
 
         evaluatorThread = new Thread(this::evaluatorLoop, "answer-evaluator-thread");
         evaluatorThread.setDaemon(true);
@@ -45,7 +47,7 @@ public class SubmissionProcessor {
         while (running) {
             try {
                 GameAnswer answer = answerQueue.take();
-                if (answer == null) continue;
+                if (answer == null || answer.round != game.getRound()) continue;
 
                 String user = answer.username;
 
@@ -72,6 +74,7 @@ public class SubmissionProcessor {
                 cooldownUntil.put(user, System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(10));
 
                 if (correct) {
+                    game.nextRound();
                     answerQueue.clear();
                 }
 

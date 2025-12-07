@@ -5,4 +5,5 @@ public class GameAnswer {
     public double x;
     public String username;
     public boolean status;
+    public int round;
 }

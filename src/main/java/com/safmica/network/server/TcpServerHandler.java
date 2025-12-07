@@ -40,7 +40,7 @@ public class TcpServerHandler extends Thread {
     serverSocket = new ServerSocket(port);
     room = new Room(4, 3);
 
-    submissionProcessor = new SubmissionProcessor(this);
+    submissionProcessor = new SubmissionProcessor(this, game);
     // LoggerHandler.logInfoMessage("Server is running on port " + port);
     this.start();
   }

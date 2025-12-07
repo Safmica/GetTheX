@@ -6,6 +6,7 @@ public class Game {
     private List<Integer> cards;
     private int x;
     private GameAnswer currentAnswer;
+    private int round = 1;
 
     public List<Integer> getCards() {
         return cards;
@@ -29,5 +30,13 @@ public class Game {
 
     public GameAnswer getCurrentAnswer() {
         return currentAnswer;
+    }
+
+    public int getRound(){
+        return round;
+    }
+
+    public void nextRound() {
+        round++;
     }
 }
