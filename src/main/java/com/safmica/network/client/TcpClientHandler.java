@@ -45,6 +45,7 @@ public class TcpClientHandler extends Thread {
     public static final String TYPE_GAME_START = "GAME_START";
     public static final String TYPE_CARDS_BROADCAST = "CARDS_BROADCAST";
     public static final String TYPE_SUBMIT_ACK = "SUBMIT_ACK";
+    public static final String TYPE_GAME_RESULT = "GAME_RESULT";
 
     private String username;
 
@@ -208,6 +209,18 @@ public class TcpClientHandler extends Thread {
                         });
                         break;
                     }
+                    case TYPE_GAME_RESULT: {
+                        System.out.println("CLIENT GOT GAME RESULT");
+                        Type gameAnswerType = new TypeToken<Message<GameAnswer>>() {
+                        }.getType();
+                        Message<GameAnswer> gameResult = gson.fromJson(line, gameAnswerType);
+                        Platform.runLater(() -> {
+                            for (GameListener l : gameListeners) {
+                                l.onGetGameResult(gameResult.data);
+                            }
+                        });
+                        break;
+                    }
                     default: {
                         // todo: give some handle (if not lazy)
                     }
@@ -244,7 +257,7 @@ public class TcpClientHandler extends Thread {
                 out.flush();
             }
         } catch (Exception e) {
-            //todo: give some handle
+            // todo: give some handle
         }
     }
 

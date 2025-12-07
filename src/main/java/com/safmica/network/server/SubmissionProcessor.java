@@ -119,7 +119,6 @@ public class SubmissionProcessor {
     private void sendReject(GameAnswer answer, String reason) {
         try {
             Message<String> msg = new Message<>("SUBMIT_REJECT", reason);
-            // send only to the submitting client
             server.sendToClient(answer.username, msg);
         } catch (Exception ignored) {
         }

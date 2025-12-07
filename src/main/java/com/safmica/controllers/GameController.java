@@ -18,6 +18,7 @@ import net.objecthunter.exp4j.ExpressionBuilder;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import com.safmica.model.Game;
 import com.safmica.model.GameAnswer;
 import com.safmica.listener.GameListener;
@@ -49,6 +50,8 @@ public class GameController implements GameListener {
     private StackPane overlay;
     @FXML
     private Label currentPlayerNameLabel;
+    @FXML
+    private Label currentAnswerStatus;
     @FXML
     private Label currentAnswer;
     @FXML
@@ -176,9 +179,38 @@ public class GameController implements GameListener {
     @Override
     public void onSubmitAck(String msg) {
         if (msg.toUpperCase().equals("RECEIVED")) {
-            if (overlay != null) NotificationUtil.showSuccess(overlay, msg);
-            else NotificationUtil.showSuccess(cardsContainer, msg);
+            if (overlay != null)
+                NotificationUtil.showSuccess(overlay, msg);
+            else
+                NotificationUtil.showSuccess(cardsContainer, msg);
         }
+    }
+
+    @Override
+    public void onGetGameResult(GameAnswer gameAnswer) {
+        game.setCurrentAnswer(gameAnswer);
+        currentAnswer.setText(gameAnswer.answer);
+        currentPlayerAnswer.setText(gameAnswer.username);
+        Platform.runLater(() -> {
+            currentAnswerStatus.getStyleClass().removeAll("current-answer-status-correct", "current-answer-status-wrong");
+            if (gameAnswer.status) {
+                currentAnswerStatus.setText("CORRECT ANSWER");
+                totalScoreLabel.setText(formatScore(gameAnswer.x));
+                currentAnswerStatus.getStyleClass().add("current-answer-status-correct");
+            } else {
+                currentAnswerStatus.setText("WRONG ANSWER");
+                totalScoreLabel.setText(formatScore(gameAnswer.x));
+                currentAnswerStatus.getStyleClass().add("current-answer-status-wrong");
+            }
+        });
+    }
+
+    private String formatScore(double value) {
+        double rounded = Math.round(value);
+        if (Math.abs(value - rounded) < 1e-9) {
+            return Long.toString((long) rounded);
+        }
+        return String.format(Locale.US, "%.2f", value);
     }
 
     @FXML
