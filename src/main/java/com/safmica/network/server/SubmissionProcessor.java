@@ -47,23 +47,27 @@ public class SubmissionProcessor {
         while (running) {
             try {
                 GameAnswer answer = answerQueue.take();
-                if (answer == null || answer.round != game.getRound()) continue;
-
+                if (answer == null) continue;
+                if (answer.round != game.getRound()) {
+                    sendAck(answer, "ROUND_OVER");
+                    continue;
+                }
                 String user = answer.username;
 
                 long now = System.currentTimeMillis();
                 Long until = cooldownUntil.getOrDefault(user, 0L);
                 if (until > now) {
-                    sendReject(answer, "COOLDOWN");
+                    sendAck(answer, "COOLDOWN");
                     continue;
                 }
 
                 int used = submitCount.getOrDefault(user, 0);
                 if (used >= 3) {
-                    sendReject(answer, "LIMIT");
+                    sendAck(answer, "LIMIT");
                     continue;
                 }
 
+                sendAck(answer, "RECEIVED");
                 submitCount.put(user, used + 1);
 
                 boolean correct = evaluateAnswer(answer);
@@ -119,9 +123,9 @@ public class SubmissionProcessor {
         return s;
     }
 
-    private void sendReject(GameAnswer answer, String reason) {
+    private void sendAck(GameAnswer answer, String reason) {
         try {
-            Message<String> msg = new Message<>("SUBMIT_REJECT", reason);
+            Message<String> msg = new Message<>("SUBMIT_ACK", reason);
             server.sendToClient(answer.username, msg);
         } catch (Exception ignored) {
         }

@@ -80,10 +80,6 @@ public class ClientHandler extends Thread {
                                 listAnswers.username = this.username;
                             }
                             server.enqueueAnswer(listAnswers);
-
-                            Message<String> ack = new Message<>("SUBMIT_ACK", "RECEIVED");
-                            String ackJson = gson.toJson(ack);
-                            sendMessage(ackJson);
                         }
                         break;
                     }

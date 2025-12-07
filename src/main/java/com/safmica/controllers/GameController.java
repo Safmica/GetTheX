@@ -1,5 +1,6 @@
 package com.safmica.controllers;
 
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -16,6 +17,7 @@ import net.objecthunter.exp4j.Expression;
 import net.objecthunter.exp4j.ExpressionBuilder;
 
 import java.net.Socket;
+import javafx.util.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -56,6 +58,8 @@ public class GameController implements GameListener {
     private Label currentAnswer;
     @FXML
     private Label currentPlayerAnswer;
+    @FXML
+    private Button submitButton;
 
     private TcpClientHandler client;
     private TcpServerHandler server;
@@ -183,6 +187,27 @@ public class GameController implements GameListener {
                 NotificationUtil.showSuccess(overlay, msg);
             else
                 NotificationUtil.showSuccess(cardsContainer, msg);
+            disableSubmit(10);
+        } else {
+            msg = msg.toUpperCase();
+            switch (msg) {
+                case "LIMIT":
+                    msg = "YOU'VE REACH THE LIMIT";
+                    disableSubmit(0);
+                    break;
+                case "COOLDOWN":
+                    msg = "SUBMIT IS COOLDOWN";
+                    disableSubmit(10);
+                    break;
+                case "ROUND_OVER":
+                    msg = "ROUND IS OVER";
+                    disableSubmit(0);
+                    break;
+            }
+            if (overlay != null)
+                NotificationUtil.showError(overlay, msg);
+            else
+                NotificationUtil.showError(cardsContainer, msg);
         }
     }
 
@@ -192,7 +217,8 @@ public class GameController implements GameListener {
         currentAnswer.setText(gameAnswer.answer);
         currentPlayerAnswer.setText(gameAnswer.username);
         Platform.runLater(() -> {
-            currentAnswerStatus.getStyleClass().removeAll("current-answer-status-correct", "current-answer-status-wrong");
+            currentAnswerStatus.getStyleClass().removeAll("current-answer-status-correct",
+                    "current-answer-status-wrong");
             if (gameAnswer.status) {
                 currentAnswerStatus.setText("CORRECT ANSWER");
                 totalScoreLabel.setText(formatScore(gameAnswer.x));
@@ -211,6 +237,33 @@ public class GameController implements GameListener {
             return Long.toString((long) rounded);
         }
         return String.format(Locale.US, "%.2f", value);
+    }
+
+    private void disableSubmit(int seconds) {
+        if (seconds == 0) {
+            disableSubmitStyle();
+        } else {
+            disableSubmitStyle();
+            PauseTransition pause = new PauseTransition(Duration.seconds(seconds));
+            pause.setOnFinished(e -> enableSubmitStyle());
+            pause.play();
+        }
+    }
+
+    private void disableSubmitStyle() {
+        Platform.runLater(() -> {
+            submitButton.setDisable(true);
+            submitButton.getStyleClass().removeAll("button");
+            submitButton.getStyleClass().add("submit-button-disable");
+        });
+    }
+
+    private void enableSubmitStyle() {
+        Platform.runLater(() -> {
+            submitButton.setDisable(false);
+            submitButton.getStyleClass().removeAll("submit-button-disable");
+            submitButton.getStyleClass().add("button");
+        });
     }
 
     @FXML

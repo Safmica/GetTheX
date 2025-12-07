@@ -111,9 +111,10 @@
                                             onAction="#handleClear" />
                                     </HBox>
 
-                                    <Button text="Submit >" styleClass="submit-button"
+                                    <Button fx:id="submitButton" text="Submit >" styleClass="submit-button"
                                         prefWidth="230"
                                         prefHeight="40"
+                                        alignment="CENTER"
                                         onAction="#handleSubmit" />
                                 </VBox>
                             </HBox>
