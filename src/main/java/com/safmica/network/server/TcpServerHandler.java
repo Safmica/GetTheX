@@ -290,6 +290,7 @@ public class TcpServerHandler extends Thread {
   }
 
   private void nextRoundWithSurrender() {
+    currentSurrenderOffer.clear();
     randomizeCards();
     Message<String> gameStart = new Message<>("NEXT_ROUND_WITH_SURRENDER", "PLAYER CHOOSE TO SURRENDER");
     broadcast(gameStart, null);

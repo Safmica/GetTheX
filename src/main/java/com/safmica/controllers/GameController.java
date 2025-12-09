@@ -76,6 +76,8 @@ public class GameController implements GameListener {
     private Button settingsButton;
     @FXML
     private Button surrendButton;
+    @FXML
+    private Label surrendPlaceholder;
 
     private TcpClientHandler client;
     private TcpServerHandler server;
@@ -371,6 +373,7 @@ public class GameController implements GameListener {
     @FXML
     private void handleSurrender() {
         client.offerSurrender();
+        surrendButton.setDisable(true);
     }
 
     @FXML
@@ -550,9 +553,18 @@ public class GameController implements GameListener {
 
     @Override
     public void onPlayerSurrender(PlayerSurrender playerSurrender) {
-        NotificationUtil.showError(overlay, playerSurrender.username + "Offer to Surrender");
+        NotificationUtil.showError(overlay, playerSurrender.username + " Offer to Surrender");
         Platform.runLater(() -> {
-            surrendButton.setText(playerSurrender.placeholder);
+            surrendPlaceholder.setText(playerSurrender.placeholder);
+        });
+    }
+
+    @Override
+    public void onNextRoundWithSurrender(String msg) {
+        NotificationUtil.showError(overlay, msg);
+        Platform.runLater(() -> {
+            surrendPlaceholder.setText("");
+            surrendButton.setDisable(false);
         });
     }
 }

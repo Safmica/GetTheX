@@ -271,6 +271,17 @@ public class TcpClientHandler extends Thread {
                         });
                         break;
                     }
+                    case TYPE_NEXT_ROUND_WITH_SURRENDER: {
+                        Type msgType = new TypeToken<Message<String>>() {
+                        }.getType();
+                        Message<String> msg = gson.fromJson(line, msgType);
+                        Platform.runLater(() -> {
+                            for (GameListener l : gameListeners) {
+                                l.onNextRoundWithSurrender(msg.data);
+                            }
+                        });
+                        break;
+                    }
                     default: {
                         // todo: give some handle (if not lazy)
                     }

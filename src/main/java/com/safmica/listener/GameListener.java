@@ -15,4 +15,5 @@ public interface GameListener {
     void onNextRound();
     void onRoundOver(String winner);
     void onPlayerSurrender(PlayerSurrender playerSurrender);
+    void onNextRoundWithSurrender(String msg);
 }
