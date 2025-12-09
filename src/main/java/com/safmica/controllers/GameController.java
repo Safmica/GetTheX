@@ -5,17 +5,23 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import javafx.scene.layout.StackPane;
 import javafx.geometry.Pos;
-
+import javafx.geometry.Side;
 import net.objecthunter.exp4j.Expression;
 import net.objecthunter.exp4j.ExpressionBuilder;
 
+import java.io.IOException;
 import java.net.Socket;
 import javafx.util.Duration;
 import java.util.ArrayList;
@@ -23,11 +29,14 @@ import java.util.List;
 import java.util.Locale;
 import com.safmica.model.Game;
 import com.safmica.model.GameAnswer;
+import com.safmica.App;
 import com.safmica.listener.GameListener;
 import com.safmica.model.Player;
+import com.safmica.model.PlayerLeaderboard;
 import com.safmica.model.Room;
 import com.safmica.network.client.TcpClientHandler;
 import com.safmica.network.server.TcpServerHandler;
+import com.safmica.utils.LoggerHandler;
 import com.safmica.utils.ui.NotificationUtil;
 
 public class GameController implements GameListener {
@@ -60,6 +69,8 @@ public class GameController implements GameListener {
     private Label currentPlayerAnswer;
     @FXML
     private Button submitButton;
+    @FXML
+    private Button settingsButton;
 
     private TcpClientHandler client;
     private TcpServerHandler server;
@@ -70,6 +81,8 @@ public class GameController implements GameListener {
     private Game game;
     private GameAnswer gameAnswer = new GameAnswer();
     private ObservableList<Player> players = FXCollections.observableArrayList();
+
+    private List<PlayerLeaderboard> latestLeaderboard = new ArrayList<>();
 
     private List<Integer> cards = new ArrayList<>();
     private List<Button> cardButtons = new ArrayList<>();
@@ -84,6 +97,7 @@ public class GameController implements GameListener {
         this.client = client;
         if (server != null) {
             isHost = true;
+            server.setLeaderboard();
             server.randomizeCards();
         }
         client.addGameListener(this);
@@ -177,6 +191,7 @@ public class GameController implements GameListener {
     @Override
     public void onCardsBroadcast(Game game) {
         this.game = game;
+        System.out.println(game.getLeaderboard());
         setCards();
     }
 
@@ -315,7 +330,7 @@ public class GameController implements GameListener {
                 char lastChar = currentAnswer.charAt(currentAnswer.length() - 1);
 
                 if (operator.equals("x²")) {
-                    if (!Character.isDigit(lastChar)) {
+                    if (!Character.isDigit(lastChar) && lastChar != ')') {
                         return;
                     }
                 } else {
@@ -370,17 +385,8 @@ public class GameController implements GameListener {
         }
 
         try {
-            double result = calculate(answer);
-
-            if (Math.abs(result - game.getX()) < 0.001) {
-                System.out.println("Correct! " + answer + " = " + result);
-            } else {
-                System.out.println("Wrong! " + answer + " = " + result + ", but X = " + game.getX());
-            }
-
             gameAnswer.answer = answer;
             gameAnswer.username = username;
-            gameAnswer.x = result;
             gameAnswer.round = game.getRound();
 
             client.gameMsg(gameAnswer);
@@ -405,82 +411,72 @@ public class GameController implements GameListener {
         return depth == 0;
     }
 
-    private double calculate(String expression) {
-        if (expression.contains("?") || expression.contains("!") || expression.contains("@") ||
-                expression.contains("#") || expression.contains("$") || expression.contains("%") ||
-                expression.contains("&") || expression.contains("[") || expression.contains("]")
-                || expression.contains("{") ||
-                expression.contains("}") || expression.contains("=") || expression.contains("<") ||
-                expression.contains(">") || expression.contains(",") || expression.contains(";") ||
-                expression.contains(":") || expression.contains("'") || expression.contains("\"")) {
-            throw new IllegalArgumentException("Invalid characters in expression");
-        }
-
-        expression = expression.replace("×", "*")
-                .replace("÷", "/");
-
-        expression = expression.replace("²", "^2");
-
-        StringBuilder result = new StringBuilder();
-        for (int i = 0; i < expression.length(); i++) {
-            char c = expression.charAt(i);
-            if (c == '√') {
-                result.append("sqrt(");
-
-                i++;
-                if (i >= expression.length()) {
-                    throw new IllegalArgumentException("√ must be followed by a number or parentheses");
-                }
-
-                if (expression.charAt(i) == '(') {
-                    int start = i + 1;
-                    int depth = 1;
-                    int j = start;
-                    while (j < expression.length() && depth > 0) {
-                        char cc = expression.charAt(j);
-                        if (cc == '(')
-                            depth++;
-                        else if (cc == ')')
-                            depth--;
-                        j++;
-                    }
-                    if (depth != 0) {
-                        throw new IllegalArgumentException("Unbalanced parentheses after √");
-                    }
-                    String inner = expression.substring(start, j - 1);
-                    result.append(inner).append(")");
-                    i = j - 1;
-                } else {
-                    StringBuilder number = new StringBuilder();
-                    while (i < expression.length()
-                            && (Character.isDigit(expression.charAt(i)) || expression.charAt(i) == '.')) {
-                        number.append(expression.charAt(i));
-                        i++;
-                    }
-                    if (number.length() > 0) {
-                        result.append(number).append(")");
-                        i--;
-                    } else {
-                        throw new IllegalArgumentException("√ must be followed by a number or parentheses");
-                    }
-                }
-            } else {
-                result.append(c);
-            }
-        }
-        expression = result.toString();
-
-        try {
-            Expression exp = new ExpressionBuilder(expression).build();
-            return exp.evaluate();
-        } catch (Exception e) {
-            throw new RuntimeException("Invalid mathematical expression: " + e.getMessage());
-        }
-    }
-
     @FXML
     private void handleSettings() {
-        System.out.println("Open settings");
-        // TODO: Implement settings modal
+        ContextMenu menu = new ContextMenu();
+        MenuItem exit = new MenuItem("Exit");
+        MenuItem leaderboard = new MenuItem("Leaderboard");
+
+        exit.setOnAction(ev -> {
+            if (client != null) {
+                client.stopClient();
+            }
+            if (server != null) {
+                server.disconnectAllClients();
+                server.stopServer();
+            }
+            try {
+                App.setRoot("menu");
+            } catch (IOException | IllegalStateException e) {
+                LoggerHandler.logFXMLFailed("Menu", e);
+            }
+        });
+
+        leaderboard.setOnAction(ev -> {
+            showLeaderboardModal();
+        });
+
+        menu.getItems().addAll(leaderboard, exit);
+        menu.show(settingsButton, Side.BOTTOM, 0, 0);
+    }
+
+    private void showLeaderboardModal() {
+        Stage dialog = new Stage();
+        dialog.initOwner(submitButton.getScene().getWindow());
+        dialog.initModality(Modality.APPLICATION_MODAL);
+        dialog.setTitle("Leaderboard");
+
+        VBox root = new VBox(8);
+        root.setPadding(new javafx.geometry.Insets(12));
+
+        if (game.getLeaderboard() == null || game.getLeaderboard().isEmpty()) {
+            root.getChildren().add(new Label("No leaderboard available"));
+        } else {
+            List<PlayerLeaderboard> copy = new ArrayList<>(game.getLeaderboard());
+            copy.sort((a, b) -> Integer.compare(b.getScore(), a.getScore()));
+
+            for (PlayerLeaderboard p : copy) {
+                HBox row = new HBox(10);
+                Label name = new Label(p.getName());
+                name.setPrefWidth(200);
+                Label score = new Label(Integer.toString(p.getScore()));
+                row.getChildren().addAll(name, score);
+                root.getChildren().add(row);
+            }
+        }
+
+        Button close = new Button("Close");
+        close.setOnAction(e -> dialog.close());
+        root.getChildren().add(close);
+
+        Scene scene = new Scene(root);
+        dialog.setScene(scene);
+        dialog.showAndWait();
+    }
+
+    @Override
+    public void onLeaderboardUpdate(List<PlayerLeaderboard> leaderboards) {
+        game.setLeaderboard(leaderboards);
+        System.out.println("TRIGGER");
     }
 }

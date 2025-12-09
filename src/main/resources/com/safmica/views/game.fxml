@@ -12,7 +12,7 @@
 
         <top>
             <HBox alignment="CENTER_LEFT" spacing="20.0" styleClass="top-bar">
-                <Button text="⚙" styleClass="setting-button" onAction="#handleSettings" />
+                <Button fx:id="settingsButton" text="⚙" styleClass="setting-button" onAction="#handleSettings" />
             </HBox>
         </top>
 

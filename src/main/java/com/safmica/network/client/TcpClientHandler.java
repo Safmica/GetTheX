@@ -20,6 +20,7 @@ import com.safmica.model.GameAnswer;
 import com.safmica.model.Message;
 import com.safmica.model.Player;
 import com.safmica.model.PlayerEvent;
+import com.safmica.model.PlayerLeaderboard;
 import com.safmica.model.Room;
 import com.safmica.network.server.ClientHandler;
 import com.safmica.utils.LoggerHandler;
@@ -46,6 +47,7 @@ public class TcpClientHandler extends Thread {
     public static final String TYPE_CARDS_BROADCAST = "CARDS_BROADCAST";
     public static final String TYPE_SUBMIT_ACK = "SUBMIT_ACK";
     public static final String TYPE_GAME_RESULT = "GAME_RESULT";
+    public static final String TYPE_LEADERBOARD_UPDATE = "LEADERBOARD_UPDATE";
 
     private String username;
 
@@ -217,6 +219,17 @@ public class TcpClientHandler extends Thread {
                         Platform.runLater(() -> {
                             for (GameListener l : gameListeners) {
                                 l.onGetGameResult(gameResult.data);
+                            }
+                        });
+                        break;
+                    }
+                    case TYPE_LEADERBOARD_UPDATE: {
+                        Type playerLeaderboardType = new TypeToken<Message<List<PlayerLeaderboard>>>() {
+                        }.getType();
+                        Message<List<PlayerLeaderboard>> leaderboard = gson.fromJson(line, playerLeaderboardType);
+                        Platform.runLater(() -> {
+                            for (GameListener l : gameListeners) {
+                                l.onLeaderboardUpdate(leaderboard.data);
                             }
                         });
                         break;

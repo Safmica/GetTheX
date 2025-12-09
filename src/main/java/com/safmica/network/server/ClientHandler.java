@@ -150,4 +150,14 @@ public class ClientHandler extends Thread {
     public boolean isConnected() {
         return client != null && !client.isClosed() && client.isConnected();
     }
+
+    public void disconnect() {
+        try {
+            if (client != null && !client.isClosed()) {
+                client.close();
+            }
+        } catch (IOException e) {
+            LoggerHandler.logError("Error closing client socket for " + username, e);
+        }
+    }
 }

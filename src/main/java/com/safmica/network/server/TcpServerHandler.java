@@ -6,6 +6,7 @@ import com.safmica.model.GameAnswer;
 import com.safmica.model.Message;
 import com.safmica.model.Player;
 import com.safmica.model.PlayerEvent;
+import com.safmica.model.PlayerLeaderboard;
 import com.safmica.model.Room;
 import com.safmica.utils.LoggerHandler;
 
@@ -62,6 +63,15 @@ public class TcpServerHandler extends Thread {
     } catch (Exception ignored) {}
   }
 
+  public void disconnectAllClients() {
+    for (ClientHandler handler : clients) {
+      try {
+        handler.disconnect();
+      } catch (Exception ignored) {
+      }
+    }
+  }
+
   @Override
   public void run() {
     while (isRunning) {
@@ -95,6 +105,36 @@ public class TcpServerHandler extends Thread {
   public void startGame() {
     Message<String> gameStart = new Message<>("GAME_START", null);
     broadcast(gameStart, null);
+  }
+
+  public void setLeaderboard() {
+    if (game.getLeaderboard() != null && !game.getLeaderboard().isEmpty()) {
+      return;
+    }
+
+    List<PlayerLeaderboard> leaderboard = new ArrayList<>();
+    for (Player p : players) {
+      PlayerLeaderboard entry = new PlayerLeaderboard(p.getId(), p.getName());
+      leaderboard.add(entry);
+    }
+    game.setLeaderboard(leaderboard);
+  }
+
+  public void addPointToPlayer(String username) {
+    if (game.getLeaderboard() == null || game.getLeaderboard().isEmpty()) {
+      setLeaderboard();
+    }
+    List<PlayerLeaderboard> leaderboard = game.getLeaderboard();
+    if (leaderboard == null) return;
+
+    for (PlayerLeaderboard entry : leaderboard) {
+      if (entry.getName().equals(username)) {
+        entry.addScore();
+      }
+    }
+
+    Message<List<PlayerLeaderboard>> leaderboards = new Message<>("LEADERBOARD_UPDATE", game.getLeaderboard());
+    broadcast(leaderboards, null);
   }
 
   private synchronized void handleNewClient(Socket clientSocket) {
@@ -170,6 +210,12 @@ public class TcpServerHandler extends Thread {
     }
     return removedHandler || removedUser;
   }
+  
+  public void nextRound() {
+    randomizeCards();
+    Message<String> gameStart = new Message<>("NEXT_ROUND", null);
+    broadcast(gameStart, null);
+  }
 
   public void randomizeCards() {
     List<Integer> cards = new ArrayList<>();
@@ -178,6 +224,7 @@ public class TcpServerHandler extends Thread {
     }
     game.setCards(cards);
     game.setX((int)(Math.random() * 26) + 15);
+
     Message<Game> dataCards = new Message<>("CARDS_BROADCAST", game);
     broadcast(dataCards, null);
   }

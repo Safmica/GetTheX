@@ -16,6 +16,7 @@ public class SubmissionProcessor {
     private final BlockingQueue<GameAnswer> broadcastQueue = new LinkedBlockingQueue<>();
     private final TcpServerHandler server;
     private Game game;
+    private String user;
 
     private final ConcurrentHashMap<String, Integer> submitCount = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Long> cooldownUntil = new ConcurrentHashMap<>();
@@ -54,7 +55,7 @@ public class SubmissionProcessor {
                     sendAck(answer, "ROUND_OVER");
                     continue;
                 }
-                String user = answer.username;
+                user = answer.username;
 
                 long now = System.currentTimeMillis();
                 Long until = cooldownUntil.getOrDefault(user, 0L);
@@ -72,14 +73,14 @@ public class SubmissionProcessor {
                 sendAck(answer, "RECEIVED");
                 submitCount.put(user, used + 1);
 
-                boolean correct = evaluateAnswer(answer);
-                answer.status = correct;
+                
+                answer = evaluateAnswer(answer);
 
                 broadcastQueue.offer(answer);
 
                 cooldownUntil.put(user, System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(10));
 
-                if (correct) {
+                if (answer.status) {
                     game.nextRound();
                     answerQueue.clear();
                     submitCount.clear();
@@ -95,11 +96,13 @@ public class SubmissionProcessor {
         }
     }
 
-    private boolean evaluateAnswer(GameAnswer answer) {
+    private GameAnswer evaluateAnswer(GameAnswer answer) {
         try {
             Game game = server.getGame();
-            if (game == null)
-                return false;
+            if (game == null) {
+                answer.status = false;
+                return answer;
+            }
 
             String expr = sanitizeExpression(answer.answer);
 
@@ -107,23 +110,37 @@ public class SubmissionProcessor {
             double result = e.evaluate();
 
             double target = game.getX();
-            return Math.abs(result - target) < 0.0001;
+            answer.x = result;
+            if (Math.abs(result - target)  < 0.0001 ) {
+                answer.status = true;
+            } else {
+                answer.status = false;
+            }
+            return answer;
         } catch (Exception ex) {
-            return false;
+            answer.status = false;
+            return answer;
         }
     }
 
     private String sanitizeExpression(String input) {
         if (input == null)
             return "0";
-        String s = input.replaceAll("×", "*")
-                .replaceAll("÷", "/")
-                .replaceAll("²", "^2");
+        String s = input;
 
-        s = s.replaceAll("√\\(", "(");
-        while (s.contains("(")) {
-            break;
-        }
+        s = s.replaceAll("×", "*")
+                .replaceAll("÷", "/")
+                .replaceAll("²", "^2")
+                .replaceAll("\\?", "*");
+
+        s = s.replaceAll("√\\s*\\(", "sqrt(");
+
+        s = s.replaceAll("√\\s*(\\d+(?:\\.\\d+)?)", "sqrt($1)");
+
+        s = s.replaceAll("\\)\\s*\\(", ")*(");
+        s = s.replaceAll("(?<=[0-9\\.])\\s*(?=\\()", "*");
+        s = s.replaceAll("\\)\\s*(?=\\d)", ")*");
+        s = s.replaceAll("(?<=[0-9\\)])(?=√)", "*");
 
         s = s.replaceAll("\\s+", "");
         return s;
@@ -150,7 +167,10 @@ public class SubmissionProcessor {
                 if (!toBroadcast.status) {
                     Thread.sleep(TimeUnit.SECONDS.toMillis(5));
                 } else {
+                    server.addPointToPlayer(toBroadcast.username);
                     Thread.sleep(TimeUnit.SECONDS.toMillis(10));
+
+                    server.nextRound();
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();

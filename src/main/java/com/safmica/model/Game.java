@@ -1,12 +1,15 @@
 package com.safmica.model;
 
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Game {
     private List<Integer> cards;
     private int x;
     private GameAnswer currentAnswer;
     private int round = 1;
+    private List<PlayerLeaderboard> leaderboards = new CopyOnWriteArrayList<>();
+
 
     public List<Integer> getCards() {
         return cards;
@@ -38,5 +41,13 @@ public class Game {
 
     public void nextRound() {
         round++;
+    }
+
+    public void setLeaderboard(List<PlayerLeaderboard> leaderboards) {
+        this.leaderboards = leaderboards;
+    }
+
+    public List<PlayerLeaderboard> getLeaderboard () {
+        return leaderboards;
     }
 }
