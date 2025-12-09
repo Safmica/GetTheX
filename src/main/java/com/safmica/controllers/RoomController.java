@@ -93,29 +93,23 @@ public class RoomController implements RoomListener {
         connectAsClient(host, port, username);
     }
 
-    /**
-     * Restore room controller state from a saved session.
-     * Does not start new server/client; it reuses existing handlers if provided.
-     */
     public void restoreFromSession(com.safmica.GameSession session) {
         if (session == null) return;
         this.username = session.getUsername();
         this.room = session.getRoom();
         this.server = session.getServer();
         this.clientHandler = session.getClient();
-        List<com.safmica.model.Player> sessPlayers = session.getPlayers();
+        List<Player> sessPlayers = session.getPlayers();
         if (sessPlayers != null) {
             Platform.runLater(() -> players.setAll(sessPlayers));
         }
 
         this.isHost = this.server != null;
 
-        // If we have an existing client handler, re-register this controller as listener
         if (this.clientHandler != null) {
             this.clientHandler.addRoomListener(this);
         }
 
-        // update UI with current room settings
         if (this.room != null) {
             Platform.runLater(() -> {
                 totalCard.setText("Total Cards = " + room.getTotalCard());
@@ -123,7 +117,6 @@ public class RoomController implements RoomListener {
             });
         }
 
-        // show/hide host controls
         Platform.runLater(() -> {
             if (startButton != null) {
                 startButton.setVisible(isHost);

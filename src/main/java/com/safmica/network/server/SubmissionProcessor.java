@@ -30,9 +30,8 @@ public class SubmissionProcessor {
     private final Thread evaluatorThread;
     private final Thread broadcasterThread;
 
-    public SubmissionProcessor(TcpServerHandler server, Game game) {
+    public SubmissionProcessor(TcpServerHandler server) {
         this.server = server;
-        this.game = game;
 
         evaluatorThread = new Thread(this::evaluatorLoop, "answer-evaluator-thread");
         evaluatorThread.setDaemon(true);
@@ -228,5 +227,9 @@ public class SubmissionProcessor {
 
     public void setRoom(Room room) {
         this.room = room;
+    }
+
+    public void setGame(Game game) {
+        this.game = game;
     }
 }

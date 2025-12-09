@@ -27,7 +27,7 @@ public class TcpServerHandler extends Thread {
   private Gson gson = new com.google.gson.Gson();
   private boolean isRunning = true;
   private Room room;
-  private Game game = new Game();
+  private Game game;
   private SubmissionProcessor submissionProcessor;
   private final List<ClientHandler> clients = new CopyOnWriteArrayList<>();
   private final List<Player> players = new CopyOnWriteArrayList<>();
@@ -46,7 +46,7 @@ public class TcpServerHandler extends Thread {
     serverSocket = new ServerSocket(port);
     room = new Room(4, 3);
 
-    submissionProcessor = new SubmissionProcessor(this, game);
+    submissionProcessor = new SubmissionProcessor(this);
     // LoggerHandler.logInfoMessage("Server is running on port " + port);
     this.start();
   }
@@ -110,7 +110,9 @@ public class TcpServerHandler extends Thread {
   }
 
   public void startGame() {
+    game = new Game();
     submissionProcessor.setRoom(room);
+    submissionProcessor.setGame(game);
     Message<String> gameStart = new Message<>("GAME_START", null);
     broadcast(gameStart, null);
   }

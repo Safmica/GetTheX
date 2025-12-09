@@ -394,6 +394,13 @@ public class GameController implements GameListener {
 
         if (answer.trim().isEmpty()) {
             System.out.println("Answer cannot be empty!");
+            NotificationUtil.showError(overlay, "Answer cannot be empty");
+            return;
+        }
+
+        if (cardUsed.stream().filter(Boolean::booleanValue).count() !=cards.size()) {
+            System.out.println("Must implement all of the number");
+            NotificationUtil.showError(overlay, "Must implement all of the number");
             return;
         }
 
