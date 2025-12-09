@@ -7,6 +7,7 @@ import com.safmica.model.Message;
 import com.safmica.model.Player;
 import com.safmica.model.PlayerEvent;
 import com.safmica.model.PlayerLeaderboard;
+import com.safmica.model.PlayerSurrender;
 import com.safmica.model.Room;
 import com.safmica.utils.LoggerHandler;
 
@@ -32,6 +33,7 @@ public class TcpServerHandler extends Thread {
   private final List<Player> players = new CopyOnWriteArrayList<>();
   private final String TOTAL_CARD = "TOTAL_CARD";
   private final String TOTAL_ROUND = "TOTAL_ROUND";
+  private List<String> currentSurrenderOffer = new CopyOnWriteArrayList<>();
 
   public TcpServerHandler(int port) {
     this.port = port;
@@ -59,8 +61,10 @@ public class TcpServerHandler extends Thread {
     }
 
     try {
-      if (submissionProcessor != null) submissionProcessor.shutdown();
-    } catch (Exception ignored) {}
+      if (submissionProcessor != null)
+        submissionProcessor.shutdown();
+    } catch (Exception ignored) {
+    }
   }
 
   public void disconnectAllClients() {
@@ -108,6 +112,14 @@ public class TcpServerHandler extends Thread {
     broadcast(gameStart, null);
   }
 
+  public synchronized void offerSurrender(String username) {
+    currentSurrenderOffer.add(username);
+    broadcastPlayerSurrender(username);
+    if (currentSurrenderOffer.size() == players.size()) {
+      nextRoundWithSurrender();
+    }
+  }
+
   public void setLeaderboard() {
     if (game.getLeaderboard() != null && !game.getLeaderboard().isEmpty()) {
       return;
@@ -126,7 +138,8 @@ public class TcpServerHandler extends Thread {
       setLeaderboard();
     }
     List<PlayerLeaderboard> leaderboard = game.getLeaderboard();
-    if (leaderboard == null) return;
+    if (leaderboard == null)
+      return;
 
     for (PlayerLeaderboard entry : leaderboard) {
       if (entry.getName().equals(username)) {
@@ -168,7 +181,8 @@ public class TcpServerHandler extends Thread {
   }
 
   public void enqueueAnswer(GameAnswer answer) {
-    if (submissionProcessor != null) submissionProcessor.enqueue(answer);
+    if (submissionProcessor != null)
+      submissionProcessor.enqueue(answer);
   }
 
   public Game getGame() {
@@ -211,7 +225,7 @@ public class TcpServerHandler extends Thread {
     }
     return removedHandler || removedUser;
   }
-  
+
   public void nextRound() {
     randomizeCards();
     Message<String> gameStart = new Message<>("NEXT_ROUND", null);
@@ -219,7 +233,7 @@ public class TcpServerHandler extends Thread {
   }
 
   public void roundOver(String winner) {
-    Message<String> gameStart = new Message<>("ROUND_OVER", "THE WINNER IS "+winner);
+    Message<String> gameStart = new Message<>("ROUND_OVER", "THE WINNER IS " + winner);
     broadcast(gameStart, null);
   }
 
@@ -229,7 +243,7 @@ public class TcpServerHandler extends Thread {
       cards.add((int) (Math.random() * 10));
     }
     game.setCards(cards);
-    game.setX((int)(Math.random() * 26) + 15);
+    game.setX((int) (Math.random() * 26) + 15);
 
     Message<Game> dataCards = new Message<>("CARDS_BROADCAST", game);
     broadcast(dataCards, null);
@@ -267,6 +281,18 @@ public class TcpServerHandler extends Thread {
     PlayerEvent event = new PlayerEvent(eventType, username);
     Message<PlayerEvent> msg = new Message<>("PLAYER_EVENT", event);
     broadcast(msg, exclude);
+  }
+
+  private synchronized void broadcastPlayerSurrender(String username) {
+    PlayerSurrender playerSurrender = new PlayerSurrender(username, "Surrend ("+currentSurrenderOffer.size()+"/"+players.size()+")");
+    Message<PlayerSurrender> msg = new Message<>("PLAYER_SURRENDER", playerSurrender);
+    broadcast(msg, null);
+  }
+
+  private void nextRoundWithSurrender() {
+    randomizeCards();
+    Message<String> gameStart = new Message<>("NEXT_ROUND_WITH_SURRENDER", "PLAYER CHOOSE TO SURRENDER");
+    broadcast(gameStart, null);
   }
 
   private void broadcastSettinsEvent(ClientHandler exclude) {

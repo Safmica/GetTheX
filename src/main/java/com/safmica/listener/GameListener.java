@@ -5,6 +5,7 @@ import java.util.List;
 import com.safmica.model.Game;
 import com.safmica.model.GameAnswer;
 import com.safmica.model.PlayerLeaderboard;
+import com.safmica.model.PlayerSurrender;
 
 public interface GameListener {
     void onCardsBroadcast(Game game);
@@ -13,4 +14,5 @@ public interface GameListener {
     void onLeaderboardUpdate(List<PlayerLeaderboard> leaderboards);
     void onNextRound();
     void onRoundOver(String winner);
+    void onPlayerSurrender(PlayerSurrender playerSurrender);
 }

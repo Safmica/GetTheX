@@ -9,7 +9,6 @@ import com.safmica.model.GameAnswer;
 import com.safmica.model.Message;
 import com.safmica.utils.LoggerHandler;
 
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -17,7 +16,6 @@ import java.io.PrintWriter;
 import java.lang.reflect.Type;
 import java.net.Socket;
 import java.net.SocketException;
- 
 
 public class ClientHandler extends Thread {
     private final TcpServerHandler server;
@@ -27,6 +25,7 @@ public class ClientHandler extends Thread {
     private BufferedReader in;
     private PrintWriter out;
     private final String TYPE_GAME_ANSWER = "GAME_ANSWER";
+    private final String TYPE_OFFER_SURRENDER = "OFFER_SURRENDER";
 
     public ClientHandler(Socket client, TcpServerHandler server, String username) {
         this.client = client;
@@ -80,6 +79,16 @@ public class ClientHandler extends Thread {
                                 listAnswers.username = this.username;
                             }
                             server.enqueueAnswer(listAnswers);
+                        }
+                        break;
+                    }
+                    case TYPE_OFFER_SURRENDER: {
+                        System.out.println("SERVER GOT OFFER SURRENDER");
+                        Type msgType = new TypeToken<Message<String>>() {
+                        }.getType();
+                        Message<String> msg = gson.fromJson(line, msgType);
+                        if (msg.data != null) {
+                            server.offerSurrender(msg.data);
                         }
                         break;
                     }
@@ -143,7 +152,8 @@ public class ClientHandler extends Thread {
     }
 
     public boolean usernameEquals(String other) {
-        if (other == null) return false;
+        if (other == null)
+            return false;
         return other.equals(this.username);
     }
 

@@ -21,6 +21,7 @@ import com.safmica.model.Message;
 import com.safmica.model.Player;
 import com.safmica.model.PlayerEvent;
 import com.safmica.model.PlayerLeaderboard;
+import com.safmica.model.PlayerSurrender;
 import com.safmica.model.Room;
 import com.safmica.network.server.ClientHandler;
 import com.safmica.utils.LoggerHandler;
@@ -50,6 +51,8 @@ public class TcpClientHandler extends Thread {
     public static final String TYPE_LEADERBOARD_UPDATE = "LEADERBOARD_UPDATE";
     public static final String TYPE_NEXT_ROUND = "NEXT_ROUND";
     public static final String TYPE_ROUND_OVER = "ROUND_OVER";
+    public static final String TYPE_PLAYER_SURRENDER = "PLAYER_SURRENDER";
+    public static final String TYPE_NEXT_ROUND_WITH_SURRENDER = "NEXT_ROUND_WITH_SURRENDER";
 
     private String username;
 
@@ -257,6 +260,17 @@ public class TcpClientHandler extends Thread {
                         });
                         break;
                     }
+                    case TYPE_PLAYER_SURRENDER: {
+                        Type msgType = new TypeToken<Message<PlayerSurrender>>() {
+                        }.getType();
+                        Message<PlayerSurrender> msg = gson.fromJson(line, msgType);
+                        Platform.runLater(() -> {
+                            for (GameListener l : gameListeners) {
+                                l.onPlayerSurrender(msg.data);
+                            }
+                        });
+                        break;
+                    }
                     default: {
                         // todo: give some handle (if not lazy)
                     }
@@ -278,6 +292,11 @@ public class TcpClientHandler extends Thread {
 
     public void gameMsg(GameAnswer answer) {
         Message<GameAnswer> msg = new Message<>("GAME_ANSWER", answer);
+        msg(msg);
+    }
+
+    public void offerSurrender() {
+        Message<String> msg = new Message<>("OFFER_SURRENDER", username);
         msg(msg);
     }
 

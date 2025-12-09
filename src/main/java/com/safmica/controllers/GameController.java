@@ -35,6 +35,7 @@ import com.safmica.App;
 import com.safmica.listener.GameListener;
 import com.safmica.model.Player;
 import com.safmica.model.PlayerLeaderboard;
+import com.safmica.model.PlayerSurrender;
 import com.safmica.model.Room;
 import com.safmica.network.client.TcpClientHandler;
 import com.safmica.network.server.TcpServerHandler;
@@ -73,6 +74,8 @@ public class GameController implements GameListener {
     private Button submitButton;
     @FXML
     private Button settingsButton;
+    @FXML
+    private Button surrendButton;
 
     private TcpClientHandler client;
     private TcpServerHandler server;
@@ -367,8 +370,7 @@ public class GameController implements GameListener {
 
     @FXML
     private void handleSurrender() {
-        System.out.println("Player surrendered");
-        // TODO: Implement surrender logic
+        client.offerSurrender();
     }
 
     @FXML
@@ -543,6 +545,14 @@ public class GameController implements GameListener {
             Scene scene = new Scene(root);
             dialog.setScene(scene);
             dialog.showAndWait();
+        });
+    }
+
+    @Override
+    public void onPlayerSurrender(PlayerSurrender playerSurrender) {
+        NotificationUtil.showError(overlay, playerSurrender.username + "Offer to Surrender");
+        Platform.runLater(() -> {
+            surrendButton.setText(playerSurrender.placeholder);
         });
     }
 }
