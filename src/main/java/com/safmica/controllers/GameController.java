@@ -40,6 +40,8 @@ import com.safmica.model.Room;
 import com.safmica.network.client.TcpClientHandler;
 import com.safmica.network.server.TcpServerHandler;
 import com.safmica.utils.LoggerHandler;
+import com.safmica.GameSession;
+import javafx.stage.StageStyle;
 import com.safmica.utils.ui.NotificationUtil;
 
 public class GameController implements GameListener {
@@ -197,7 +199,7 @@ public class GameController implements GameListener {
                 .orElse(null);
 
         if (currentPlayer != null) {
-            currentPlayerNameLabel.setText(currentPlayer.getName() + " (0)");
+            currentPlayerNameLabel.setText(currentPlayer.getName());
         }
     }
 
@@ -538,18 +540,39 @@ public class GameController implements GameListener {
             Button exit = new Button("Exit");
 
             playAgain.setOnAction(ev -> {
+                GameSession sessionObj = GameSession.getInstance();
+                sessionObj.setPlayers(new ArrayList<>(players));
+                sessionObj.setRoom(room);
+                sessionObj.setUsername(username);
+                sessionObj.setServer(server);
+                sessionObj.setClient(client);
+
                 dialog.close();
                 try {
-                    App.setRoot("room");
+                    FXMLLoader loader = App.getFXMLLoader("room");
+                    javafx.scene.Parent loadedRoot = loader.load();
+                    com.safmica.controllers.RoomController rc = loader.getController();
+                    rc.restoreFromSession(sessionObj);
+                    App.setRoot(loadedRoot);
                 } catch (IOException | IllegalStateException e) {
                     LoggerHandler.logFXMLFailed("Room", e);
                 }
             });
 
             exit.setOnAction(ev -> {
+                GameSession sess = GameSession.getInstance();
+                sess.setPlayers(new ArrayList<>(players));
+                sess.setRoom(room);
+                sess.setUsername(username);
+                sess.setServer(server);
+                sess.setClient(client);
+
                 dialog.close();
                 try {
-                    App.setRoot("menu");
+                    FXMLLoader loader = App.getFXMLLoader("menu");
+                    javafx.scene.Parent loadedRoot = loader.load();
+                    // optionally MenuController can read GameSession if needed
+                    App.setRoot(loadedRoot);
                 } catch (IOException | IllegalStateException e) {
                     LoggerHandler.logFXMLFailed("Menu", e);
                 }
@@ -557,6 +580,9 @@ public class GameController implements GameListener {
 
             buttons.getChildren().addAll(playAgain, exit);
             root.getChildren().addAll(msg, buttons);
+
+            dialog.setOnCloseRequest(e -> e.consume());
+            dialog.initStyle(StageStyle.UNDECORATED);
 
             Scene scene = new Scene(root);
             dialog.setScene(scene);

@@ -65,7 +65,7 @@
                                 <TextField fx:id="answerField"
                                     styleClass="answer-field"
                                     prefWidth="500" prefHeight="60" editable="false" />
-                                <Label fx:id="surrendPlaceholder" prefWidth="200"></Label>
+                                <Label fx:id="surrendPlaceholder" prefWidth="200" styleClass="surrender-placeholder-label"></Label>
                             </HBox>
                             <HBox spacing="10.0">
                                 <HBox fx:id="cardsContainer" alignment="CENTER" spacing="10.0"

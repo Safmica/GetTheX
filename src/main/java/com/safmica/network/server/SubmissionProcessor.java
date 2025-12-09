@@ -176,13 +176,13 @@ public class SubmissionProcessor {
                     if (totalRound > 0 && currentRoundBefore >= totalRound) {
                         List<PlayerLeaderboard> lb = game.getLeaderboard();
                         if (lb == null || lb.isEmpty()) {
-                            Thread.sleep(TimeUnit.SECONDS.toMillis(10));
+                            Thread.sleep(TimeUnit.SECONDS.toMillis(3));
                             server.roundOver(answer.username);
                         } else {
                             int max = lb.stream().mapToInt(PlayerLeaderboard::getScore).max().orElse(0);
                             List<PlayerLeaderboard> top = lb.stream().filter(p -> p.getScore() == max).collect(Collectors.toList());
                             if (top.size() == 1) {
-                                Thread.sleep(TimeUnit.SECONDS.toMillis(10));
+                                Thread.sleep(TimeUnit.SECONDS.toMillis(3));
                                 server.roundOver(top.get(0).getName());
                                 if (server.isFinalRoundActive()) server.endFinalRound();
                             } else {

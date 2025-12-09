@@ -95,3 +95,9 @@
   -fx-font-size: 25px;
   -fx-font-weight: bold;
 }
+
+.surrender-placeholder-label {
+  -fx-text-fill: red;
+  -fx-font-size: 25px;
+  -fx-font-weight: bold;
+}
