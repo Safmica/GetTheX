@@ -12,4 +12,5 @@ public interface GameListener {
     void onGetGameResult(GameAnswer gameAnswer);
     void onLeaderboardUpdate(List<PlayerLeaderboard> leaderboards);
     void onNextRound();
+    void onRoundOver(String winner);
 }

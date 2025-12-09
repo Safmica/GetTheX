@@ -3,6 +3,9 @@ package com.safmica.network.server;
 import com.safmica.model.Game;
 import com.safmica.model.GameAnswer;
 import com.safmica.model.Message;
+import com.safmica.model.PlayerLeaderboard;
+import com.safmica.model.Room;
+
 import net.objecthunter.exp4j.Expression;
 import net.objecthunter.exp4j.ExpressionBuilder;
 
@@ -16,7 +19,7 @@ public class SubmissionProcessor {
     private final BlockingQueue<GameAnswer> broadcastQueue = new LinkedBlockingQueue<>();
     private final TcpServerHandler server;
     private Game game;
-    private String user;
+    private Room room;
 
     private final ConcurrentHashMap<String, Integer> submitCount = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Long> cooldownUntil = new ConcurrentHashMap<>();
@@ -55,7 +58,7 @@ public class SubmissionProcessor {
                     sendAck(answer, "ROUND_OVER");
                     continue;
                 }
-                user = answer.username;
+                String user = answer.username;
 
                 long now = System.currentTimeMillis();
                 Long until = cooldownUntil.getOrDefault(user, 0L);
@@ -73,7 +76,6 @@ public class SubmissionProcessor {
                 sendAck(answer, "RECEIVED");
                 submitCount.put(user, used + 1);
 
-                
                 answer = evaluateAnswer(answer);
 
                 broadcastQueue.offer(answer);
@@ -111,7 +113,7 @@ public class SubmissionProcessor {
 
             double target = game.getX();
             answer.x = result;
-            if (Math.abs(result - target)  < 0.0001 ) {
+            if (Math.abs(result - target) < 0.0001) {
                 answer.status = true;
             } else {
                 answer.status = false;
@@ -157,20 +159,25 @@ public class SubmissionProcessor {
     private void broadcasterLoop() {
         while (running) {
             try {
-                GameAnswer toBroadcast = broadcastQueue.take();
-                if (toBroadcast == null)
+                GameAnswer answer = broadcastQueue.take();
+                if (answer == null)
                     continue;
 
-                Message<GameAnswer> m = new Message<>("GAME_RESULT", toBroadcast);
+                Message<GameAnswer> m = new Message<>("GAME_RESULT", answer);
                 server.broadcastMessage(m);
 
-                if (!toBroadcast.status) {
+                if (!answer.status) {
                     Thread.sleep(TimeUnit.SECONDS.toMillis(5));
                 } else {
-                    server.addPointToPlayer(toBroadcast.username);
+                    server.addPointToPlayer(answer.username);
                     Thread.sleep(TimeUnit.SECONDS.toMillis(10));
 
-                    server.nextRound();
+                    room.setTotalRound(1);
+                    if (room.getTotalRound() <= findByUsername(answer.username).getScore()) {
+                        server.roundOver(answer.username);
+                    } else {
+                        server.nextRound();
+                    }
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -185,5 +192,17 @@ public class SubmissionProcessor {
         running = false;
         evaluatorThread.interrupt();
         broadcasterThread.interrupt();
+    }
+
+    public synchronized PlayerLeaderboard findByUsername(String username) {
+        for (PlayerLeaderboard p : game.getLeaderboard()) {
+            if (username.equals(p.getName()))
+                return p;
+        }
+        return null;
+    }
+
+    public void setRoom(Room room) {
+        this.room = room;
     }
 }

@@ -103,6 +103,7 @@ public class TcpServerHandler extends Thread {
   }
 
   public void startGame() {
+    submissionProcessor.setRoom(room);
     Message<String> gameStart = new Message<>("GAME_START", null);
     broadcast(gameStart, null);
   }
@@ -214,6 +215,11 @@ public class TcpServerHandler extends Thread {
   public void nextRound() {
     randomizeCards();
     Message<String> gameStart = new Message<>("NEXT_ROUND", null);
+    broadcast(gameStart, null);
+  }
+
+  public void roundOver(String winner) {
+    Message<String> gameStart = new Message<>("ROUND_OVER", "THE WINNER IS "+winner);
     broadcast(gameStart, null);
   }
 

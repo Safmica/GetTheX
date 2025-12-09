@@ -5,6 +5,8 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
@@ -485,11 +487,62 @@ public class GameController implements GameListener {
         Platform.runLater(() -> {
             totalScoreLabel.setText("0");
             answerField.setText("");
-            currentAnswerStatus.getStyleClass().removeAll("current-answer-status-wrong", "current-answer-status-correct");
+            currentAnswerStatus.getStyleClass().removeAll("current-answer-status-wrong",
+                    "current-answer-status-correct");
             currentAnswerStatus.getStyleClass().add("current-answer-status");
             currentAnswerStatus.setText("Waiting...");
             currentPlayerAnswer.setText("No one is submit");
             currentAnswer.setText("Empty");
+        });
+    }
+
+    @Override
+    public void onRoundOver(String winner) {
+        Platform.runLater(() -> {
+            Stage dialog = new Stage();
+            dialog.initOwner(submitButton.getScene().getWindow());
+            dialog.initModality(Modality.APPLICATION_MODAL);
+            dialog.setTitle("Round Over");
+
+            VBox root = new VBox(12);
+            root.setPadding(new javafx.geometry.Insets(12));
+            root.setAlignment(Pos.CENTER);
+
+            String message = (winner == null || winner.isEmpty()) ? "Round Over" : winner;
+            Label msg = new Label(message);
+            msg.setWrapText(true);
+            msg.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+
+            HBox buttons = new HBox(10);
+            buttons.setAlignment(Pos.CENTER);
+
+            Button playAgain = new Button("Play Again");
+            Button exit = new Button("Exit");
+
+            playAgain.setOnAction(ev -> {
+                dialog.close();
+                try {
+                    App.setRoot("room");
+                } catch (IOException | IllegalStateException e) {
+                    LoggerHandler.logFXMLFailed("Room", e);
+                }
+            });
+
+            exit.setOnAction(ev -> {
+                dialog.close();
+                try {
+                    App.setRoot("menu");
+                } catch (IOException | IllegalStateException e) {
+                    LoggerHandler.logFXMLFailed("Menu", e);
+                }
+            });
+
+            buttons.getChildren().addAll(playAgain, exit);
+            root.getChildren().addAll(msg, buttons);
+
+            Scene scene = new Scene(root);
+            dialog.setScene(scene);
+            dialog.showAndWait();
         });
     }
 }
