@@ -4,26 +4,26 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
-import com.google.gson.stream.JsonReader;
 import com.safmica.model.GameAnswer;
 import com.safmica.model.Message;
 import com.safmica.utils.LoggerHandler;
 
-import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.lang.reflect.Type;
 import java.net.Socket;
 import java.net.SocketException;
+import java.nio.charset.StandardCharsets;
 
 public class ClientHandler extends Thread {
     private final TcpServerHandler server;
     private Socket client;
     private Gson gson;
     private String username;
-    private BufferedReader in;
-    private PrintWriter out;
+    private DataInputStream in;
+    private DataOutputStream out;
     private final String TYPE_GAME_ANSWER = "GAME_ANSWER";
     private final String TYPE_OFFER_SURRENDER = "OFFER_SURRENDER";
 
@@ -32,8 +32,9 @@ public class ClientHandler extends Thread {
         this.server = server;
         this.username = username;
         try {
-            this.in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-            this.out = new PrintWriter(client.getOutputStream(), true);
+            this.in = new DataInputStream(client.getInputStream());
+            this.out = new DataOutputStream(client.getOutputStream());
+
         } catch (IOException e) {
             LoggerHandler.logError("Error initializing streams for client: " + client.getInetAddress().getHostAddress(),
                     e);
@@ -44,26 +45,42 @@ public class ClientHandler extends Thread {
     public void run() {
         gson = new Gson();
         try {
-            while (isConnected() && client != null && !client.isClosed()) {
-                String line = in.readLine();
-                if (line == null)
-                    break;
+            DataInputStream dis = new DataInputStream(client.getInputStream());
 
-                JsonElement el = null;
+            while (isConnected() && client != null && !client.isClosed()) {
+                int length;
                 try {
-                    JsonReader jrRoot = new JsonReader(new java.io.StringReader(line));
-                    jrRoot.setLenient(true);
-                    el = gson.fromJson(jrRoot, JsonElement.class);
-                } catch (Exception ex) {
-                    LoggerHandler.logError("Malformed JSON received from server: " + line, ex);
+                    length = dis.readInt();
+                } catch (EOFException e) {
+                    break;
+                }
+
+                if (length <= 0) {
                     continue;
                 }
-                if (el == null || !el.isJsonObject())
+
+                byte[] buf = new byte[length];
+                dis.readFully(buf);
+
+                String json = new String(buf, StandardCharsets.UTF_8);
+
+                JsonElement el;
+                try {
+                    el = gson.fromJson(json, JsonElement.class);
+                } catch (Exception ex) {
+                    LoggerHandler.logError("Malformed JSON received: " + json, ex);
                     continue;
+                }
+
+                if (!el.isJsonObject())
+                    continue;
+
                 JsonObject obj = el.getAsJsonObject();
+
                 String type = obj.has("type") && !obj.get("type").isJsonNull()
                         ? obj.get("type").getAsString()
                         : null;
+
                 if (type == null)
                     continue;
 
@@ -72,7 +89,7 @@ public class ClientHandler extends Thread {
                         System.out.println("SERVER GOT SUBMIT");
                         Type listType = new TypeToken<Message<GameAnswer>>() {
                         }.getType();
-                        Message<GameAnswer> listMsg = gson.fromJson(line, listType);
+                        Message<GameAnswer> listMsg = gson.fromJson(json, listType);
                         GameAnswer listAnswers = listMsg.data;
                         if (listAnswers != null) {
                             if (listAnswers.username == null || listAnswers.username.isEmpty()) {
@@ -86,7 +103,7 @@ public class ClientHandler extends Thread {
                         System.out.println("SERVER GOT OFFER SURRENDER");
                         Type msgType = new TypeToken<Message<String>>() {
                         }.getType();
-                        Message<String> msg = gson.fromJson(line, msgType);
+                        Message<String> msg = gson.fromJson(json, msgType);
                         if (msg.data != null) {
                             server.offerSurrender(msg.data);
                         }
@@ -143,11 +160,15 @@ public class ClientHandler extends Thread {
     public void sendMessage(String message) {
         try {
             if (out != null && !client.isClosed()) {
-                out.println(message);
+                byte[] data = message.getBytes(StandardCharsets.UTF_8);
+
+                out.writeInt(data.length);
+                out.write(data);
                 out.flush();
             }
         } catch (Exception e) {
-            // todo: give some handle
+            disconnect();
+            cleanup();
         }
     }
 

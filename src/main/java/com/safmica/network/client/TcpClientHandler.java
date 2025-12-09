@@ -3,13 +3,13 @@ package com.safmica.network.client;
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.stream.JsonReader;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 
@@ -23,7 +23,6 @@ import com.safmica.model.PlayerEvent;
 import com.safmica.model.PlayerLeaderboard;
 import com.safmica.model.PlayerSurrender;
 import com.safmica.model.Room;
-import com.safmica.network.server.ClientHandler;
 import com.safmica.utils.LoggerHandler;
 
 import javafx.application.Platform;
@@ -34,8 +33,8 @@ public class TcpClientHandler extends Thread {
     private Socket client;
     private boolean isRunning = true;
     private Gson gson;
-    private BufferedReader in;
-    private PrintWriter out;
+    private DataInputStream in;
+    private DataOutputStream out;
     private List<RoomListener> roomListeners = new CopyOnWriteArrayList<>();
     private List<GameListener> gameListeners = new CopyOnWriteArrayList<>();
 
@@ -96,10 +95,10 @@ public class TcpClientHandler extends Thread {
 
         try {
             client = new Socket(host, port);
-            in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-            out = new PrintWriter(client.getOutputStream(), true);
+            this.in = new DataInputStream(client.getInputStream());
+            this.out = new DataOutputStream(client.getOutputStream());
 
-            out.println(username);
+            sendMessage(username);
             this.start();
         } catch (IOException e) {
             LoggerHandler.logError("Failed to start client or connect to server.", e);
@@ -114,26 +113,42 @@ public class TcpClientHandler extends Thread {
     public void run() {
         gson = new Gson();
         try {
-            while (isRunning && client != null && !client.isClosed()) {
-                String line = in.readLine();
-                if (line == null)
-                    break;
+            DataInputStream dis = new DataInputStream(client.getInputStream());
 
-                JsonElement el = null;
+            while (isRunning && client != null && !client.isClosed()) {
+                int length;
                 try {
-                    JsonReader jrRoot = new JsonReader(new java.io.StringReader(line));
-                    jrRoot.setLenient(true);
-                    el = gson.fromJson(jrRoot, JsonElement.class);
-                } catch (Exception ex) {
-                    LoggerHandler.logError("Malformed JSON received from server: " + line, ex);
+                    length = dis.readInt();
+                } catch (EOFException e) {
+                    break;
+                }
+
+                if (length <= 0) {
                     continue;
                 }
-                if (el == null || !el.isJsonObject())
+
+                byte[] buf = new byte[length];
+                dis.readFully(buf);
+
+                String json = new String(buf, StandardCharsets.UTF_8);
+
+                JsonElement el;
+                try {
+                    el = gson.fromJson(json, JsonElement.class);
+                } catch (Exception ex) {
+                    LoggerHandler.logError("Malformed JSON received: " + json, ex);
                     continue;
+                }
+
+                if (!el.isJsonObject())
+                    continue;
+
                 JsonObject obj = el.getAsJsonObject();
+
                 String type = obj.has("type") && !obj.get("type").isJsonNull()
                         ? obj.get("type").getAsString()
                         : null;
+
                 if (type == null)
                     continue;
 
@@ -141,7 +156,7 @@ public class TcpClientHandler extends Thread {
                     case TYPE_PLAYER_LIST: {
                         Type listType = new TypeToken<Message<List<Player>>>() {
                         }.getType();
-                        Message<List<Player>> listMsg = gson.fromJson(line, listType);
+                        Message<List<Player>> listMsg = gson.fromJson(json, listType);
                         List<Player> users = listMsg.data;
                         System.out.println("user" + users);
                         Platform.runLater(() -> {
@@ -155,7 +170,7 @@ public class TcpClientHandler extends Thread {
                     case TYPE_PLAYER_EVENT: {
                         Type eventType = new TypeToken<Message<PlayerEvent>>() {
                         }.getType();
-                        Message<PlayerEvent> eventMsg = gson.fromJson(line, eventType);
+                        Message<PlayerEvent> eventMsg = gson.fromJson(json, eventType);
                         if (eventMsg != null && eventMsg.data != null) {
                             PlayerEvent event = eventMsg.data;
                             Platform.runLater(() -> {
@@ -174,7 +189,7 @@ public class TcpClientHandler extends Thread {
                     case TYPE_SETTING_UPDATE: {
                         Type roomType = new TypeToken<Message<Room>>() {
                         }.getType();
-                        Message<Room> roomInfo = gson.fromJson(line, roomType);
+                        Message<Room> roomInfo = gson.fromJson(json, roomType);
                         Room room = roomInfo.data;
                         System.out.println("DEBUG : total cards" + room.getTotalCard());
                         System.out.println("DEBUG : total rounds" + room.getTotalRound());
@@ -197,7 +212,7 @@ public class TcpClientHandler extends Thread {
                     case TYPE_CARDS_BROADCAST: {
                         Type gameType = new TypeToken<Message<Game>>() {
                         }.getType();
-                        Message<Game> game = gson.fromJson(line, gameType);
+                        Message<Game> game = gson.fromJson(json, gameType);
                         Platform.runLater(() -> {
                             for (GameListener l : gameListeners) {
                                 l.onCardsBroadcast(game.data);
@@ -209,7 +224,7 @@ public class TcpClientHandler extends Thread {
                         System.out.println("CLIENT GOT ACK");
                         Type stringType = new TypeToken<Message<String>>() {
                         }.getType();
-                        Message<String> msg = gson.fromJson(line, stringType);
+                        Message<String> msg = gson.fromJson(json, stringType);
                         Platform.runLater(() -> {
                             for (GameListener l : gameListeners) {
                                 l.onSubmitAck(msg.data);
@@ -221,7 +236,7 @@ public class TcpClientHandler extends Thread {
                         System.out.println("CLIENT GOT GAME RESULT");
                         Type gameAnswerType = new TypeToken<Message<GameAnswer>>() {
                         }.getType();
-                        Message<GameAnswer> gameResult = gson.fromJson(line, gameAnswerType);
+                        Message<GameAnswer> gameResult = gson.fromJson(json, gameAnswerType);
                         Platform.runLater(() -> {
                             for (GameListener l : gameListeners) {
                                 l.onGetGameResult(gameResult.data);
@@ -232,7 +247,7 @@ public class TcpClientHandler extends Thread {
                     case TYPE_LEADERBOARD_UPDATE: {
                         Type playerLeaderboardType = new TypeToken<Message<List<PlayerLeaderboard>>>() {
                         }.getType();
-                        Message<List<PlayerLeaderboard>> leaderboard = gson.fromJson(line, playerLeaderboardType);
+                        Message<List<PlayerLeaderboard>> leaderboard = gson.fromJson(json, playerLeaderboardType);
                         Platform.runLater(() -> {
                             for (GameListener l : gameListeners) {
                                 l.onLeaderboardUpdate(leaderboard.data);
@@ -253,7 +268,7 @@ public class TcpClientHandler extends Thread {
                         System.out.println("ROUND OVER");
                         Type msgType = new TypeToken<Message<String>>() {
                         }.getType();
-                        Message<String> msg = gson.fromJson(line, msgType);
+                        Message<String> msg = gson.fromJson(json, msgType);
                         Platform.runLater(() -> {
                             for (GameListener l : gameListeners) {
                                 l.onRoundOver(msg.data);
@@ -264,7 +279,7 @@ public class TcpClientHandler extends Thread {
                     case TYPE_PLAYER_SURRENDER: {
                         Type msgType = new TypeToken<Message<PlayerSurrender>>() {
                         }.getType();
-                        Message<PlayerSurrender> msg = gson.fromJson(line, msgType);
+                        Message<PlayerSurrender> msg = gson.fromJson(json, msgType);
                         Platform.runLater(() -> {
                             for (GameListener l : gameListeners) {
                                 l.onPlayerSurrender(msg.data);
@@ -275,7 +290,7 @@ public class TcpClientHandler extends Thread {
                     case TYPE_NEXT_ROUND_WITH_SURRENDER: {
                         Type msgType = new TypeToken<Message<String>>() {
                         }.getType();
-                        Message<String> msg = gson.fromJson(line, msgType);
+                        Message<String> msg = gson.fromJson(json, msgType);
                         Platform.runLater(() -> {
                             for (GameListener l : gameListeners) {
                                 l.onNextRoundWithSurrender(msg.data);
@@ -286,7 +301,7 @@ public class TcpClientHandler extends Thread {
                     case TYPE_FINAL_ROUND: {
                         Type msgType = new TypeToken<Message<List<String>>>() {
                         }.getType();
-                        Message<List<String>> msg = gson.fromJson(line, msgType);
+                        Message<List<String>> msg = gson.fromJson(json, msgType);
                         Platform.runLater(() -> {
                             for (GameListener l : gameListeners) {
                                 l.onFinalRound(msg.data);
@@ -331,11 +346,14 @@ public class TcpClientHandler extends Thread {
     public void sendMessage(String message) {
         try {
             if (out != null && !client.isClosed()) {
-                out.println(message);
+                byte[] data = message.getBytes(StandardCharsets.UTF_8);
+
+                out.writeInt(data.length);
+                out.write(data);
                 out.flush();
             }
         } catch (Exception e) {
-            // todo: give some handle
+            // TODO: handle disconnect or cleanup
         }
     }
 

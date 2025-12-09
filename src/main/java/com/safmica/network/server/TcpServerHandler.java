@@ -11,9 +11,9 @@ import com.safmica.model.PlayerSurrender;
 import com.safmica.model.Room;
 import com.safmica.utils.LoggerHandler;
 
-import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -184,10 +184,22 @@ public class TcpServerHandler extends Thread {
   private synchronized void handleNewClient(Socket clientSocket) {
     String clientUsername;
     try {
-      BufferedReader socketIn = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-      clientUsername = socketIn.readLine();
-      if (clientUsername == null)
+      DataInputStream socketIn = new DataInputStream(clientSocket.getInputStream());
+      int length;
+      try {
+        length = socketIn.readInt();
+      } catch (IOException e) {
+        LoggerHandler.logError("Error reading username length from client.", e);
         return;
+      }
+
+      if (length <= 0) {
+        return;
+      }
+
+      byte[] buf = new byte[length];
+      socketIn.readFully(buf);
+      clientUsername = new String(buf, StandardCharsets.UTF_8);
     } catch (IOException e) {
       LoggerHandler.logError("Error reading client username.", e);
       return;
