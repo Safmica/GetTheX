@@ -78,6 +78,8 @@ public class GameController implements GameListener {
     private Button surrendButton;
     @FXML
     private Label surrendPlaceholder;
+    @FXML
+    private Label roundLabel;
 
     private TcpClientHandler client;
     private TcpServerHandler server;
@@ -157,6 +159,10 @@ public class GameController implements GameListener {
         });
     }
 
+    private void setRound() {
+        roundLabel.setText("Round " + Integer.toString(game.getRound()));
+    }
+
     private void setPlayers() {
         playersContainer.getChildren().clear();
 
@@ -176,7 +182,7 @@ public class GameController implements GameListener {
             Label avatarLabel = new Label("👤");
             avatarLabel.getStyleClass().add("player-avatar");
 
-            Label nameLabel = new Label(player.getName() + " (0)");
+            Label nameLabel = new Label(player.getName());
             nameLabel.getStyleClass().add("player-name");
 
             playerBox.getChildren().addAll(avatarLabel, nameLabel);
@@ -198,7 +204,7 @@ public class GameController implements GameListener {
     @Override
     public void onCardsBroadcast(Game game) {
         this.game = game;
-        System.out.println(game.getLeaderboard());
+        setRound();
         setCards();
     }
 
@@ -223,6 +229,10 @@ public class GameController implements GameListener {
                     break;
                 case "ROUND_OVER":
                     msg = "ROUND IS OVER";
+                    disableSubmit(0);
+                    break;
+                case "NOT_ALLOWED_FINAL":
+                    msg = "YOU'RE NOT FINALIST";
                     disableSubmit(0);
                     break;
             }
@@ -492,6 +502,9 @@ public class GameController implements GameListener {
         Platform.runLater(() -> {
             totalScoreLabel.setText("0");
             answerField.setText("");
+            submitButton.setDisable(false);
+            submitButton.getStyleClass().removeAll("submit-button-disable");
+            submitButton.getStyleClass().add("button");
             currentAnswerStatus.getStyleClass().removeAll("current-answer-status-wrong",
                     "current-answer-status-correct");
             currentAnswerStatus.getStyleClass().add("current-answer-status");
@@ -566,5 +579,29 @@ public class GameController implements GameListener {
             surrendPlaceholder.setText("");
             surrendButton.setDisable(false);
         });
+    }
+
+    @Override
+    public void onFinalRound(List<String> finalists) {
+        if (!finalists.contains(username)) {
+            submitButton.setDisable(true);
+        } else {
+            submitButton.setDisable(false);
+        }
+
+        totalScoreLabel.setText("0");
+        answerField.setText("");
+        submitButton.getStyleClass().removeAll("submit-button-disable");
+        submitButton.getStyleClass().add("button");
+        currentAnswerStatus.getStyleClass().removeAll("current-answer-status-wrong",
+                "current-answer-status-correct");
+        currentAnswerStatus.getStyleClass().add("current-answer-status");
+        currentAnswerStatus.setText("Waiting...");
+        currentPlayerAnswer.setText("No one is submit");
+        currentAnswer.setText("Empty");
+
+        roundLabel.setText("FINAL ROUND");
+
+        NotificationUtil.showInfo(overlay, "FINAL ROUND START");
     }
 }

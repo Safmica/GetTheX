@@ -35,6 +35,9 @@ public class TcpServerHandler extends Thread {
   private final String TOTAL_ROUND = "TOTAL_ROUND";
   private List<String> currentSurrenderOffer = new CopyOnWriteArrayList<>();
 
+  private volatile boolean finalRoundActive = false;
+  private final List<String> finalRoundPlayers = new CopyOnWriteArrayList<>();
+
   public TcpServerHandler(int port) {
     this.port = port;
   }
@@ -118,6 +121,31 @@ public class TcpServerHandler extends Thread {
     if (currentSurrenderOffer.size() == players.size()) {
       nextRoundWithSurrender();
     }
+  }
+
+  public synchronized void startFinalRound(List<String> finalists) {
+    finalRoundPlayers.clear();
+    for (String u : finalists) {
+      finalRoundPlayers.add(u);
+    }
+    finalRoundActive = true;
+    randomizeCards();
+    Message<List<String>> msg = new Message<>("FINAL_ROUND", new ArrayList<>(finalists));
+    broadcast(msg, null);
+  }
+
+  public synchronized void endFinalRound() {
+    finalRoundPlayers.clear();
+    finalRoundActive = false;
+  }
+
+  public boolean isFinalRoundActive() {
+    return finalRoundActive;
+  }
+
+  public boolean isFinalRoundPlayer(String username) {
+    if (username == null) return false;
+    return finalRoundPlayers.contains(username);
   }
 
   public void setLeaderboard() {

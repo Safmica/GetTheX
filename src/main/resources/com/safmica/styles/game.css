@@ -89,3 +89,9 @@
   -fx-border-color: rgba(255, 255, 255, 0.2);
   -fx-border-radius: 8;
 }
+
+.round-label {
+  -fx-text-fill: white;
+  -fx-font-size: 25px;
+  -fx-font-weight: bold;
+}

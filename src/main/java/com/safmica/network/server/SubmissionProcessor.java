@@ -13,6 +13,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class SubmissionProcessor {
     private final BlockingQueue<GameAnswer> answerQueue = new LinkedBlockingQueue<>();
@@ -73,6 +75,11 @@ public class SubmissionProcessor {
                     continue;
                 }
 
+                if (server.isFinalRoundActive() && !server.isFinalRoundPlayer(user)) {
+                    sendAck(answer, "NOT_ALLOWED_FINAL");
+                    continue;
+                }
+
                 sendAck(answer, "RECEIVED");
                 submitCount.put(user, used + 1);
 
@@ -81,14 +88,6 @@ public class SubmissionProcessor {
                 broadcastQueue.offer(answer);
 
                 cooldownUntil.put(user, System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(10));
-
-                if (answer.status) {
-                    game.nextRound();
-                    answerQueue.clear();
-                    submitCount.clear();
-                    cooldownUntil.clear();
-                }
-
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;
@@ -170,12 +169,37 @@ public class SubmissionProcessor {
                     Thread.sleep(TimeUnit.SECONDS.toMillis(5));
                 } else {
                     server.addPointToPlayer(answer.username);
-                    Thread.sleep(TimeUnit.SECONDS.toMillis(10));
 
-                    room.setTotalRound(1);
-                    if (room.getTotalRound() <= findByUsername(answer.username).getScore()) {
-                        server.roundOver(answer.username);
+                    int currentRoundBefore = game.getRound();
+                    int totalRound = room == null ? 0 : room.getTotalRound();
+
+                    if (totalRound > 0 && currentRoundBefore >= totalRound) {
+                        List<PlayerLeaderboard> lb = game.getLeaderboard();
+                        if (lb == null || lb.isEmpty()) {
+                            Thread.sleep(TimeUnit.SECONDS.toMillis(10));
+                            server.roundOver(answer.username);
+                        } else {
+                            int max = lb.stream().mapToInt(PlayerLeaderboard::getScore).max().orElse(0);
+                            List<PlayerLeaderboard> top = lb.stream().filter(p -> p.getScore() == max).collect(Collectors.toList());
+                            if (top.size() == 1) {
+                                Thread.sleep(TimeUnit.SECONDS.toMillis(10));
+                                server.roundOver(top.get(0).getName());
+                                if (server.isFinalRoundActive()) server.endFinalRound();
+                            } else {
+                                List<String> finalists = top.stream().map(PlayerLeaderboard::getName).collect(Collectors.toList());
+                                Thread.sleep(TimeUnit.SECONDS.toMillis(10));
+                                game.nextRound();
+                                server.startFinalRound(finalists);
+                            }
+                        }
                     } else {
+                        game.nextRound();
+                        answerQueue.clear();
+                        submitCount.clear();
+                        cooldownUntil.clear();
+
+                        Thread.sleep(TimeUnit.SECONDS.toMillis(10));
+
                         server.nextRound();
                     }
                 }

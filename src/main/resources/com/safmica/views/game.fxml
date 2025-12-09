@@ -12,7 +12,8 @@
 
         <top>
             <HBox alignment="CENTER_LEFT" spacing="20.0" styleClass="top-bar">
-                <Button fx:id="settingsButton" text="⚙" styleClass="setting-button" onAction="#handleSettings" />
+                <Button fx:id="settingsButton" text="⚙" styleClass="setting-button"
+                    onAction="#handleSettings" />
             </HBox>
         </top>
 
@@ -104,7 +105,8 @@
                                 </VBox>
                                 <VBox alignment="CENTER" spacing="10.0">
                                     <HBox alignment="CENTER" spacing="10.0">
-                                        <Button fx:id="surrendButton" text="Surrend" styleClass="button-danger"
+                                        <Button fx:id="surrendButton" text="Surrend"
+                                            styleClass="button-danger"
                                             prefWidth="120"
                                             onAction="#handleSurrender" />
                                         <Button text="Clear" styleClass="button-danger"
@@ -112,7 +114,8 @@
                                             onAction="#handleClear" />
                                     </HBox>
 
-                                    <Button fx:id="submitButton" text="Submit >" styleClass="submit-button"
+                                    <Button fx:id="submitButton" text="Submit >"
+                                        styleClass="submit-button"
                                         prefWidth="230"
                                         prefHeight="40"
                                         alignment="CENTER"
@@ -168,6 +171,15 @@
         </padding>
     </VBox>
 
-    <StackPane fx:id="overlay" pickOnBounds="false" StackPane.alignment="TOP_CENTER" maxHeight="60" maxWidth="300"/>
+    <HBox StackPane.alignment="TOP_CENTER"
+        alignment="CENTER"
+        maxHeight="60"
+        maxWidth="300">
+        <Label fx:id="roundLabel" styleClass="round-label" text="Round 1"
+            StackPane.alignment="TOP_CENTER" maxHeight="60"
+            maxWidth="300" />
+    </HBox>
+    <StackPane fx:id="overlay" pickOnBounds="false" StackPane.alignment="TOP_CENTER" maxHeight="60"
+        maxWidth="300" />
 
 </StackPane>

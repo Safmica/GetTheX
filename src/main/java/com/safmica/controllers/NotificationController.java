@@ -19,7 +19,10 @@ public class NotificationController {
 
     public void setMessage(String message) {
         Platform.runLater(() -> {
-            if (messageLabel != null) messageLabel.setText(message);
+            if (messageLabel != null) {
+                messageLabel.setText(message);
+                messageLabel.setWrapText(true);
+            }
         });
     }
 
@@ -36,7 +39,8 @@ public class NotificationController {
     }
 
     public void showAndAutoRemove(Pane parent, double seconds) {
-        if (parent == null || rootPane == null) return;
+        if (parent == null || rootPane == null)
+            return;
         Platform.runLater(() -> {
             if (!parent.getChildren().contains(rootPane)) {
                 parent.getChildren().add(rootPane);
@@ -48,14 +52,17 @@ public class NotificationController {
     }
 
     public void show(Pane parent) {
-        if (parent == null || rootPane == null) return;
+        if (parent == null || rootPane == null)
+            return;
         Platform.runLater(() -> {
-            if (!parent.getChildren().contains(rootPane)) parent.getChildren().add(rootPane);
+            if (!parent.getChildren().contains(rootPane))
+                parent.getChildren().add(rootPane);
         });
     }
 
     public void hide(Pane parent) {
-        if (parent == null || rootPane == null) return;
+        if (parent == null || rootPane == null)
+            return;
         Platform.runLater(() -> parent.getChildren().remove(rootPane));
     }
 }

@@ -53,6 +53,7 @@ public class TcpClientHandler extends Thread {
     public static final String TYPE_ROUND_OVER = "ROUND_OVER";
     public static final String TYPE_PLAYER_SURRENDER = "PLAYER_SURRENDER";
     public static final String TYPE_NEXT_ROUND_WITH_SURRENDER = "NEXT_ROUND_WITH_SURRENDER";
+    public static final String TYPE_FINAL_ROUND = "FINAL_ROUND";
 
     private String username;
 
@@ -278,6 +279,17 @@ public class TcpClientHandler extends Thread {
                         Platform.runLater(() -> {
                             for (GameListener l : gameListeners) {
                                 l.onNextRoundWithSurrender(msg.data);
+                            }
+                        });
+                        break;
+                    }
+                    case TYPE_FINAL_ROUND: {
+                        Type msgType = new TypeToken<Message<List<String>>>() {
+                        }.getType();
+                        Message<List<String>> msg = gson.fromJson(line, msgType);
+                        Platform.runLater(() -> {
+                            for (GameListener l : gameListeners) {
+                                l.onFinalRound(msg.data);
                             }
                         });
                         break;
