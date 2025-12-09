@@ -479,4 +479,17 @@ public class GameController implements GameListener {
         game.setLeaderboard(leaderboards);
         System.out.println("TRIGGER");
     }
+
+    @Override
+    public void onNextRound() {
+        Platform.runLater(() -> {
+            totalScoreLabel.setText("0");
+            answerField.setText("");
+            currentAnswerStatus.getStyleClass().removeAll("current-answer-status-wrong", "current-answer-status-correct");
+            currentAnswerStatus.getStyleClass().add("current-answer-status");
+            currentAnswerStatus.setText("Waiting...");
+            currentPlayerAnswer.setText("No one is submit");
+            currentAnswer.setText("Empty");
+        });
+    }
 }

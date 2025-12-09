@@ -48,6 +48,7 @@ public class TcpClientHandler extends Thread {
     public static final String TYPE_SUBMIT_ACK = "SUBMIT_ACK";
     public static final String TYPE_GAME_RESULT = "GAME_RESULT";
     public static final String TYPE_LEADERBOARD_UPDATE = "LEADERBOARD_UPDATE";
+    public static final String TYPE_NEXT_ROUND = "NEXT_ROUND";
 
     private String username;
 
@@ -230,6 +231,15 @@ public class TcpClientHandler extends Thread {
                         Platform.runLater(() -> {
                             for (GameListener l : gameListeners) {
                                 l.onLeaderboardUpdate(leaderboard.data);
+                            }
+                        });
+                        break;
+                    }
+                    case TYPE_NEXT_ROUND: {
+                        System.out.println("NEXT ROUND");
+                        Platform.runLater(() -> {
+                            for (GameListener l : gameListeners) {
+                                l.onNextRound();
                             }
                         });
                         break;

@@ -135,7 +135,7 @@
         spacing="10.0">
         <Label fx:id="currentAnswerStatus"
             styleClass="current-answer-status"
-            text="Wrong Answer"
+            text="Waiting..."
             alignment="CENTER"
             textAlignment="CENTER"
             maxWidth="300" />

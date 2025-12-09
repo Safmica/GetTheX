@@ -11,4 +11,5 @@ public interface GameListener {
     void onSubmitAck(String message);
     void onGetGameResult(GameAnswer gameAnswer);
     void onLeaderboardUpdate(List<PlayerLeaderboard> leaderboards);
+    void onNextRound();
 }
