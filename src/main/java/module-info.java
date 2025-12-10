@@ -5,7 +5,7 @@ module com.safmica {
   requires java.logging;
   requires com.google.gson;
   requires exp4j;
-
+ 
   opens com.safmica to javafx.fxml, com.google.gson;
   opens com.safmica.controllers to javafx.fxml;
   opens com.safmica.model to com.google.gson;
