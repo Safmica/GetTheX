@@ -389,15 +389,14 @@ public class GameController implements GameListener {
             return;
         }
 
-        if (cardUsed.stream().filter(Boolean::booleanValue).count() !=cards.size()) {
+        if (cardUsed.stream().filter(Boolean::booleanValue).count() != cards.size()) {
             System.out.println("Must implement all of the number");
             NotificationUtil.showError(overlay, "Must implement all of the number");
             return;
         }
 
         if (!areParenthesesBalanced(answer)) {
-            System.out.println("Invalid parentheses in expression");
-            currentAnswer.setText("INVALID PARENTHESES");
+            NotificationUtil.showError(overlay, "Invalid Parentheses");
             return;
         }
 
