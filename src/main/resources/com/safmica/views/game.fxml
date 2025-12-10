@@ -54,7 +54,7 @@
                         <VBox alignment="CENTER" spacing="10.0" styleClass="current-player-panel"
                             prefWidth="100" prefHeight="150">
                             <Label text="👤" styleClass="current-player-avatar" />
-                            <Label fx:id="currentPlayerNameLabel" text="Name (Pts)"
+                            <Label fx:id="currentPlayerNameLabel" text=""
                                 styleClass="current-player-name" />
                             <padding>
                                 <Insets top="20.0" right="20.0" bottom="20.0" left="20.0" />
