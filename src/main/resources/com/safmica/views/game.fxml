@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.Insets?>
+
+<StackPane xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1"
+    fx:controller="com.safmica.controllers.GameController" prefWidth="1280" prefHeight="720"
+    styleClass="game-container" stylesheets="@../styles/game.css">
+
+    <BorderPane StackPane.alignment="CENTER">
+
+        <top>
+            <HBox alignment="CENTER_LEFT" spacing="20.0" styleClass="top-bar">
+                <Button fx:id="settingsButton" text="⚙" styleClass="setting-button"
+                    onAction="#handleSettings" />
+            </HBox>
+        </top>
+
+        <right>
+            <VBox>
+                <VBox spacing="20.0" styleClass="players-panel" prefWidth="200">
+                    <VBox spacing="10.0">
+                        <VBox alignment="CENTER" spacing="5.0" styleClass="x-bar">
+                            <Label alignment="CENTER" text="GET THE" prefWidth="100.0" />
+                            <Label alignment="CENTER" fx:id="x" styleClass="x-text"
+                                prefWidth="100.0" />
+                        </VBox>
+                        <VBox alignment="CENTER" spacing="5.0" styleClass="x-bar">
+                            <Label alignment="CENTER" text="TOTAL SCORE" prefWidth="100.0" />
+                            <Label fx:id="totalScoreLabel" alignment="CENTER" text="0"
+                                styleClass="x-text" prefWidth="100.0" />
+                        </VBox>
+                    </VBox>
+                    <VBox spacing="10.0">
+                        <Label text="Player List" styleClass="players-list-title" alignment="CENTER" />
+                        <ScrollPane fitToWidth="true" styleClass="players-scroll">
+                            <content>
+                                <VBox fx:id="playersContainer" spacing="5.0" />
+                            </content>
+                        </ScrollPane>
+                    </VBox>
+
+                    <padding>
+                        <Insets top="20.0" right="10.0" bottom="20.0" left="10.0" />
+                    </padding>
+                </VBox>
+            </VBox>
+        </right>
+        <left>
+            <BorderPane>
+                <bottom>
+                    <HBox spacing="10.0" alignment="BOTTOM_LEFT">
+                        <VBox alignment="CENTER" spacing="10.0" styleClass="current-player-panel"
+                            prefWidth="100" prefHeight="150">
+                            <Label text="👤" styleClass="current-player-avatar" />
+                            <Label fx:id="currentPlayerNameLabel" text=""
+                                styleClass="current-player-name" />
+                            <padding>
+                                <Insets top="20.0" right="20.0" bottom="20.0" left="20.0" />
+                            </padding>
+                        </VBox>
+                        <VBox spacing="10.0">
+                            <HBox alignment="CENTER" spacing="10.0">
+                                <TextField fx:id="answerField"
+                                    styleClass="answer-field"
+                                    prefWidth="500" prefHeight="60" editable="false" />
+                                <Label fx:id="surrendPlaceholder" prefWidth="200" styleClass="surrender-placeholder-label"></Label>
+                            </HBox>
+                            <HBox spacing="10.0">
+                                <HBox fx:id="cardsContainer" alignment="CENTER" spacing="10.0"
+                                    styleClass="cards-container" maxWidth="500">
+                                    <HBox.hgrow>NEVER</HBox.hgrow>
+                                </HBox>
+                                <VBox spacing="10.0">
+                                    <HBox alignment="CENTER" spacing="10.0">
+                                        <Button text="+" styleClass="calculator-button"
+                                            prefWidth="60"
+                                            onAction="#handleOperator" />
+                                        <Button text="-" styleClass="calculator-button"
+                                            prefWidth="60"
+                                            onAction="#handleOperator" />
+                                        <Button text="√x" styleClass="calculator-button"
+                                            prefWidth="80"
+                                            onAction="#handleOperator" />
+                                        <Button text="(" styleClass="calculator-button"
+                                            prefWidth="60"
+                                            onAction="#handleOperator" />
+                                    </HBox>
+
+                                    <HBox alignment="CENTER" spacing="10.0">
+                                        <Button text="÷" styleClass="calculator-button"
+                                            prefWidth="60"
+                                            onAction="#handleOperator" />
+                                        <Button text="×" styleClass="calculator-button"
+                                            prefWidth="60"
+                                            onAction="#handleOperator" />
+                                        <Button text="x²" styleClass="calculator-button"
+                                            prefWidth="80"
+                                            onAction="#handleOperator" />
+                                        <Button text=")" styleClass="calculator-button"
+                                            prefWidth="60"
+                                            onAction="#handleOperator" />
+                                    </HBox>
+                                </VBox>
+                                <VBox alignment="CENTER" spacing="10.0">
+                                    <HBox alignment="CENTER" spacing="10.0">
+                                        <Button fx:id="surrendButton" text="Surrend"
+                                            styleClass="button-danger"
+                                            prefWidth="120"
+                                            onAction="#handleSurrender" />
+                                        <Button text="Clear" styleClass="button-danger"
+                                            prefWidth="100"
+                                            onAction="#handleClear" />
+                                    </HBox>
+
+                                    <Button fx:id="submitButton" text="Submit >"
+                                        styleClass="submit-button"
+                                        prefWidth="230"
+                                        prefHeight="40"
+                                        alignment="CENTER"
+                                        onAction="#handleSubmit" />
+                                </VBox>
+                            </HBox>
+                        </VBox>
+                    </HBox>
+                </bottom>
+            </BorderPane>
+        </left>
+    </BorderPane>
+
+    <VBox StackPane.alignment="CENTER"
+        alignment="CENTER"
+        fillWidth="true"
+        prefWidth="800"
+        maxWidth="800"
+        prefHeight="80"
+        maxHeight="80"
+        spacing="10.0">
+        <Label fx:id="currentAnswerStatus"
+            styleClass="current-answer-status"
+            text="Waiting..."
+            alignment="CENTER"
+            textAlignment="CENTER"
+            maxWidth="300" />
+        <VBox StackPane.alignment="CENTER"
+            styleClass="current-answer-display"
+            alignment="CENTER"
+            fillWidth="true"
+            prefWidth="800"
+            maxWidth="800"
+            prefHeight="80"
+            maxHeight="80">
+            <Label fx:id="currentPlayerAnswer"
+                text="No one is submit"
+                alignment="CENTER"
+                textAlignment="CENTER"
+                wrapText="true"
+                textOverrun="CLIP"
+                maxWidth="Infinity" />
+            <Label fx:id="currentAnswer"
+                text="Empty"
+                alignment="CENTER"
+                textAlignment="CENTER"
+                wrapText="true"
+                textOverrun="CLIP"
+                maxWidth="Infinity" />
+        </VBox>
+        <padding>
+            <Insets top="8" right="12" bottom="100" left="12" />
+        </padding>
+    </VBox>
+
+    <HBox StackPane.alignment="TOP_CENTER"
+        alignment="CENTER"
+        maxHeight="60"
+        maxWidth="300">
+        <Label fx:id="roundLabel" styleClass="round-label" text="Round 1"
+            StackPane.alignment="TOP_CENTER" maxHeight="60"
+            maxWidth="300" />
+    </HBox>
+    <StackPane fx:id="overlay" pickOnBounds="false" StackPane.alignment="TOP_CENTER" maxHeight="60"
+        maxWidth="300" />
+
+</StackPane>

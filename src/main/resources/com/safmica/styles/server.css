@@ -1,0 +1,23 @@
+.serverForm {
+    -fx-padding: 20;
+    -fx-spacing: 15;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+}
+
+.serverForm Label {
+    -fx-text-fill: #f0f0f0;
+    -fx-font-weight: bold;
+    -fx-pref-width: 200; 
+    -fx-alignment: CENTER_LEFT;
+}
+
+.serverForm TextField {
+    -fx-pref-width: 200;
+    -fx-background-color: #3c3c3c;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #555;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+    -fx-padding: 5;
+}
