@@ -56,6 +56,7 @@ public class TcpClientHandler extends Thread {
     public static final String TYPE_DUPLICATE_USERNAME = "DUPLICATE_USERNAME";
     public static final String TYPE_CHANGE_USERNAME = "CHANGE_USERNAME";
     public static final String TYPE_USERNAME_ACCEPTED = "USERNAME_ACCEPTED";
+    public static final String TYPE_ROOM_FULL = "ROOM_FULL";
 
     private String username;
 
@@ -354,6 +355,18 @@ public class TcpClientHandler extends Thread {
                                 }
                             });
                         }
+                        break;
+                    }
+                    case TYPE_ROOM_FULL: {
+                        Type msgType = new TypeToken<Message<String>>() {}.getType();
+                        Message<String> msg = gson.fromJson(json, msgType);
+                        String message = (msg != null && msg.data != null) ? msg.data : "Room is full";
+                        Platform.runLater(() -> {
+                            for (RoomListener l : roomListeners) {
+                                l.onConnectionError(message);
+                            }
+                        });
+                        stopClient();
                         break;
                     }
                     default: {

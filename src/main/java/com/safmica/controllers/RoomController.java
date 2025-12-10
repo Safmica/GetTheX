@@ -40,8 +40,11 @@ public class RoomController implements RoomListener {
     private Label totalCard;
     @FXML
     private Label totalRound;
+    @FXML
+    private Label playerLimit;
     private int totalRoundNow;
     private int totalCardNow;
+    private int playerLimitNow;
 
     private String username;
     private TcpClientHandler clientHandler;
@@ -256,6 +259,10 @@ public class RoomController implements RoomListener {
         Platform.runLater(() -> {
             totalCard.setText("Total Cards = " + room.getTotalCard());
             totalRound.setText("Total Rounds = " + room.getTotalRound());
+            playerLimit.setText("Max Players = " + room.getPlayerLimit());
+            totalCardNow = room.getTotalCard();
+            totalRoundNow = room.getTotalRound();
+            playerLimitNow = room.getPlayerLimit();
         });
     }
 
@@ -277,6 +284,9 @@ public class RoomController implements RoomListener {
             Parent root = loader.load();
 
             RoomSettingsController controller = loader.getController();
+        controller.setCurrentTotalCard(room != null ? room.getTotalCard() : 4);
+        controller.setCurrentTotalRound(room != null ? room.getTotalRound() : 3);
+        controller.setCurrentPlayerLimit(room != null ? room.getPlayerLimit() : 1);
 
             Stage modal = new Stage();
             modal.initModality(Modality.APPLICATION_MODAL);
@@ -288,6 +298,7 @@ public class RoomController implements RoomListener {
             if (controller.isSaved()) {
                 int newTotalCard = controller.getSelectedTotalCard();
                 int newTotalRound = controller.getSelectedTotalRound();
+                int newPlayerLimit = controller.getSelectedPlayerLimit();
                 if (newTotalCard != totalCardNow) {
                     if (newTotalCard < 4 || newTotalCard > 6) {
                         System.out.println("DEBUG : TOTAL CARD MUST BETWEEN 4-6");
@@ -304,6 +315,13 @@ public class RoomController implements RoomListener {
                         return;
                     }
                     server.updateRoomSettings(newTotalRound, "TOTAL_ROUND");
+                }
+                if (newPlayerLimit != playerLimitNow) {
+                    if (newPlayerLimit < 1 || newPlayerLimit > 10) {
+                        System.out.println("DEBUG : PLAYER LIMIT MUST BETWEEN 1-10");
+                        return;
+                    }
+                    server.updateRoomSettings(newPlayerLimit, "PLAYER_LIMIT");
                 }
                 System.out.println("Settings saved: Total Rounds = " + newTotalRound);
             }

@@ -25,6 +25,12 @@
                 editable="true" />
         </HBox>
 
+        <HBox alignment="CENTER_LEFT" spacing="10.0">
+            <Label text="Player Limit:" prefWidth="100.0" />
+            <Spinner fx:id="playerLimitSpinner" min="1" max="10" initialValue="1" prefWidth="80.0"
+                editable="true" />
+        </HBox>
+
         <HBox alignment="CENTER" spacing="10.0">
             <Button text="Save" onAction="#handleSave" styleClass="submitButton" prefWidth="80.0" />
             <Button text="Cancel" onAction="#handleCancel" styleClass="button-danger"

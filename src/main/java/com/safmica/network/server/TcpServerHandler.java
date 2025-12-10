@@ -33,6 +33,7 @@ public class TcpServerHandler extends Thread {
   private final List<Player> players = new CopyOnWriteArrayList<>();
   private final String TOTAL_CARD = "TOTAL_CARD";
   private final String TOTAL_ROUND = "TOTAL_ROUND";
+  private final String PLAYER_LIMIT = "PLAYER_LIMIT";
   private List<String> currentSurrenderOffer = new CopyOnWriteArrayList<>();
 
   private volatile boolean finalRoundActive = false;
@@ -100,6 +101,9 @@ public class TcpServerHandler extends Thread {
         break;
       case TOTAL_ROUND:
         room.setTotalRound(option);
+        break;
+      case PLAYER_LIMIT:
+        room.setPlayerLimit(option);
         break;
       default:
         break;
@@ -224,6 +228,20 @@ public class TcpServerHandler extends Thread {
       assignedName = "Player" + ((int) (Math.random() * 9000) + 1000);
     }
 
+    if (players.size() >= room.getPlayerLimit()) {
+      try {
+        Message<String> fullMsg = new Message<>("ROOM_FULL", "Room is full");
+        String json = gson.toJson(fullMsg);
+        java.io.DataOutputStream dos = new java.io.DataOutputStream(clientSocket.getOutputStream());
+        byte[] data = json.getBytes(StandardCharsets.UTF_8);
+        dos.writeInt(data.length);
+        dos.write(data);
+        dos.flush();
+      } catch (Exception ignored) {}
+      try { clientSocket.close(); } catch (IOException ignored) {}
+      return;
+    }
+
     boolean isHost = players.isEmpty();
     Player newPlayer = new Player(assignedName, isHost);
     ClientHandler handler = new ClientHandler(clientSocket, this, assignedName);
@@ -282,6 +300,31 @@ public class TcpServerHandler extends Thread {
     Boolean removedUser = players.removeIf(p -> p.getName().equals(username));
 
     if (removedUser) {
+      currentSurrenderOffer.removeIf(u -> u != null && u.equals(username));
+      if (!currentSurrenderOffer.isEmpty()) {
+        for (String u : new ArrayList<>(currentSurrenderOffer)) {
+          broadcastPlayerSurrender(u);
+        }
+        if (currentSurrenderOffer.size() == players.size()) {
+          nextRoundWithSurrender();
+        }
+      }
+      if (finalRoundActive) {
+        finalRoundPlayers.removeIf(u -> u != null && u.equals(username));
+        if (finalRoundPlayers.isEmpty()) {
+          endFinalRound();
+        }
+      }
+
+      if (game != null && game.getLeaderboard() != null) {
+        List<PlayerLeaderboard> leaderboard = game.getLeaderboard();
+        boolean changed = leaderboard.removeIf(entry -> entry != null && username != null && username.equals(entry.getName()));
+        if (changed) {
+          Message<List<PlayerLeaderboard>> leaderboards = new Message<>("LEADERBOARD_UPDATE", leaderboard);
+          broadcast(leaderboards, null);
+        }
+      }
+
       broadcastPlayerEvent("DISCONNECTED", username, null);
       broadcastPlayerList(null);
 
