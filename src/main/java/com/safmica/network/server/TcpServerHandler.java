@@ -228,6 +228,20 @@ public class TcpServerHandler extends Thread {
       assignedName = "Player" + ((int) (Math.random() * 9000) + 1000);
     }
 
+    if (game != null) {
+      try {
+        Message<String> fullMsg = new Message<>("ROOM_FULL", "Game in progress");
+        String json = gson.toJson(fullMsg);
+        java.io.DataOutputStream dos = new java.io.DataOutputStream(clientSocket.getOutputStream());
+        byte[] data = json.getBytes(StandardCharsets.UTF_8);
+        dos.writeInt(data.length);
+        dos.write(data);
+        dos.flush();
+      } catch (Exception ignored) {}
+      try { clientSocket.close(); } catch (IOException ignored) {}
+      return;
+    }
+
     if (players.size() >= room.getPlayerLimit()) {
       try {
         Message<String> fullMsg = new Message<>("ROOM_FULL", "Room is full");

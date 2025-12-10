@@ -92,6 +92,16 @@ public class RoomController implements RoomListener {
         connectAsClient(host, port, username);
     }
 
+    public void initAsClientWithHandler(TcpClientHandler existingClient, String username) {
+        this.isHost = false;
+        this.username = username;
+        this.clientHandler = existingClient;
+        if (this.clientHandler != null) {
+            this.clientHandler.addRoomListener(this);
+        }
+        Platform.runLater(() -> playersList.setCellFactory(listView -> new PlayerListCell(clientHandler, () -> this.username)));
+    }
+
     public void restoreFromSession(com.safmica.GameSession session) {
         if (session == null) return;
         this.username = session.getUsername();
