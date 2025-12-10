@@ -10,6 +10,7 @@ import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 
 import java.util.function.Supplier;
 
@@ -65,8 +66,8 @@ public class PlayerListCell extends ListCell<Player> {
                         ((Label) contentLabel).setTextFill(Color.WHITE);
                     } else {
                         Node content = dialog.getDialogPane().getContent();
-                        if (content instanceof javafx.scene.Parent) {
-                            for (Node n : ((javafx.scene.Parent) content).lookupAll(".label")) {
+                        if (content instanceof Parent) {
+                            for (Node n : ((Parent) content).lookupAll(".label")) {
                                 if (n instanceof Label) {
                                     Label lbl = (Label) n;
                                     if ("New username:".equals(lbl.getText())) {

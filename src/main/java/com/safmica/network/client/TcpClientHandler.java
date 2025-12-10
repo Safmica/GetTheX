@@ -369,9 +369,6 @@ public class TcpClientHandler extends Thread {
                         stopClient();
                         break;
                     }
-                    default: {
-                        // todo: give some handle (if not lazy)
-                    }
                 }
             }
         } catch (SocketException e) {
@@ -408,7 +405,7 @@ public class TcpClientHandler extends Thread {
     public void requestChangeUsername(String newName) {
         if (newName == null || newName.trim().isEmpty()) return;
         Message<String> msg = new Message<>(TYPE_CHANGE_USERNAME, newName.trim());
-        // use a fresh gson in case run() hasn't set the field yet
+        
         String json = new Gson().toJson(msg);
         sendMessage(json);
     }
@@ -428,7 +425,7 @@ public class TcpClientHandler extends Thread {
                 out.flush();
             }
         } catch (Exception e) {
-            // TODO: handle disconnect or cleanup
+            
         }
     }
 

@@ -48,7 +48,6 @@ public class TcpServerHandler extends Thread {
     room = new Room(4, 3);
 
     submissionProcessor = new SubmissionProcessor(this);
-    // LoggerHandler.logInfoMessage("Server is running on port " + port);
     this.start();
   }
 
@@ -87,8 +86,6 @@ public class TcpServerHandler extends Thread {
       } catch (IOException e) {
         if (isRunning) {
           LoggerHandler.logError("Error accepting client connection.", e);
-        } else {
-          // LoggerHandler.logInfoMessage("Server stopped.");
         }
       }
     }

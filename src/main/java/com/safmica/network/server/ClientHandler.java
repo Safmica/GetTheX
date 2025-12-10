@@ -130,9 +130,6 @@ public class ClientHandler extends Thread {
                         }
                         break;
                     }
-                    default: {
-                        // todo: give some handle (if not lazy)
-                    }
                 }
             }
         } catch (SocketException e) {
