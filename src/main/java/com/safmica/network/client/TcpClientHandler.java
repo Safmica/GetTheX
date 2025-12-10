@@ -60,10 +60,7 @@ public class TcpClientHandler extends Thread {
     public static final String TYPE_DUPLICATE_USERNAME = "DUPLICATE_USERNAME";
     public static final String TYPE_CHANGE_USERNAME = "CHANGE_USERNAME";
     public static final String TYPE_USERNAME_ACCEPTED = "USERNAME_ACCEPTED";
-    public static final String TYPE_RECONNECT_REQUEST = "RECONNECT_REQUEST";
-    public static final String TYPE_RECONNECT_ACCEPT = "RECONNECT_ACCEPT";
-    public static final String TYPE_RECONNECT_REJECT = "RECONNECT_REJECT";
-    public static final String TYPE_JOIN_REJECTED = "JOIN_REJECTED";
+    public static final String TYPE_ROOM_FULL = "ROOM_FULL";
 
     private String username;
 
@@ -390,39 +387,13 @@ public class TcpClientHandler extends Thread {
                         }
                         break;
                     }
-                    case TYPE_RECONNECT_ACCEPT: {
+                    case TYPE_ROOM_FULL: {
                         Type msgType = new TypeToken<Message<String>>() {}.getType();
                         Message<String> msg = gson.fromJson(json, msgType);
-                        if (msg != null && msg.data != null) {
-                            String restoredName = msg.data;
-                            this.username = restoredName;
-                            Platform.runLater(() -> {
-                                for (RoomListener l : roomListeners) {
-                                    l.onPlayerConnected(restoredName);
-                                }
-                            });
-                        }
-                        break;
-                    }
-                    case TYPE_RECONNECT_REJECT: {
-                        Type msgType = new TypeToken<Message<String>>() {}.getType();
-                        Message<String> msg = gson.fromJson(json, msgType);
-                        String rejectedId = msg != null ? msg.data : null;
-                        String reason = "Reconnect rejected" + (rejectedId != null ? (": " + rejectedId) : "");
+                        String message = (msg != null && msg.data != null) ? msg.data : "Room is full";
                         Platform.runLater(() -> {
                             for (RoomListener l : roomListeners) {
-                                try { l.onConnectionError(reason); } catch (Exception ignored) {}
-                            }
-                        });
-                        break;
-                    }
-                    case TYPE_JOIN_REJECTED: {
-                        Type msgType = new TypeToken<Message<String>>() {}.getType();
-                        Message<String> msg = gson.fromJson(json, msgType);
-                        String reason = msg != null && msg.data != null ? msg.data : "Join rejected";
-                        Platform.runLater(() -> {
-                            for (RoomListener l : roomListeners) {
-                                try { l.onConnectionError(reason); } catch (Exception ignored) {}
+                                l.onConnectionError(message);
                             }
                         });
                         stopClient();
@@ -436,6 +407,13 @@ public class TcpClientHandler extends Thread {
         } catch (SocketException e) {
             if (isRunning) {
                 System.out.println("WARNING: Connection to server lost.");
+                try {
+                    javafx.application.Platform.runLater(() -> {
+                        for (RoomListener l : roomListeners) {
+                            try { l.onConnectionError("Connection to server lost"); } catch (Exception ignored) {}
+                        }
+                    });
+                } catch (Exception ignored) {}
                 stopClient();
             }
         } catch (IOException e) {

@@ -197,7 +197,7 @@ public class ClientHandler extends Thread {
         }
     }
 
-    public void sendMessage(String message) {
+    public synchronized void sendMessage(String message) {
         try {
             if (out != null && !client.isClosed()) {
                 byte[] data = message.getBytes(StandardCharsets.UTF_8);

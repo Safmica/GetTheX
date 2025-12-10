@@ -8,6 +8,8 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.HBox;
+import javafx.scene.paint.Color;
+import javafx.scene.Node;
 
 import java.util.function.Supplier;
 
@@ -55,8 +57,30 @@ public class PlayerListCell extends ListCell<Player> {
                     TextInputDialog dialog = new TextInputDialog(player.getName());
                     dialog.setTitle("Change Username");
                     dialog.setHeaderText("Change your username");
-                    dialog.setContentText("New username:");
+                    dialog.setContentText("");
                     dialog.initOwner(this.getListView().getScene().getWindow());
+
+                    Node contentLabel = dialog.getDialogPane().lookup(".content.label");
+                    if (contentLabel instanceof Label) {
+                        ((Label) contentLabel).setTextFill(Color.WHITE);
+                    } else {
+                        Node content = dialog.getDialogPane().getContent();
+                        if (content instanceof javafx.scene.Parent) {
+                            for (Node n : ((javafx.scene.Parent) content).lookupAll(".label")) {
+                                if (n instanceof Label) {
+                                    Label lbl = (Label) n;
+                                    if ("New username:".equals(lbl.getText())) {
+                                        lbl.setTextFill(Color.WHITE);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Node headerLabel = dialog.getDialogPane().lookup(".header-panel .label");
+                    if (headerLabel instanceof Label) {
+                        ((Label) headerLabel).setTextFill(Color.WHITE);
+                    }
+                    
 
                     dialog.showAndWait().ifPresent(newName -> {
                         String trimmed = newName.trim();

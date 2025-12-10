@@ -40,8 +40,11 @@ public class RoomController implements RoomListener {
     private Label totalCard;
     @FXML
     private Label totalRound;
+    @FXML
+    private Label playerLimit;
     private int totalRoundNow;
     private int totalCardNow;
+    private int playerLimitNow;
 
     private String username;
     private TcpClientHandler clientHandler;
@@ -129,20 +132,13 @@ public class RoomController implements RoomListener {
         connectAsClient(host, port, username);
     }
 
-    public void requestReconnect(String host, int port, String playerId, String requestedName) {
+    public void initAsClientWithHandler(TcpClientHandler existingClient, String username) {
         this.isHost = false;
-        this.username = requestedName;
-        clientHandler = new TcpClientHandler(host, port, requestedName, isHost);
-        clientHandler.addRoomListener(this);
-        clientHandler.startClient();
-
-        new Thread(() -> {
-            try {
-                Thread.sleep(150);
-            } catch (InterruptedException ignored) {}
-            clientHandler.requestReconnect(playerId);
-        }).start();
-
+        this.username = username;
+        this.clientHandler = existingClient;
+        if (this.clientHandler != null) {
+            this.clientHandler.addRoomListener(this);
+        }
         Platform.runLater(() -> playersList.setCellFactory(listView -> new PlayerListCell(clientHandler, () -> this.username)));
     }
 
@@ -212,7 +208,15 @@ public class RoomController implements RoomListener {
     public void onPlayerConnected(String username) {
         Platform.runLater(() -> {
             System.out.println(username + " joined the room");
-            // TODO: Add some notify ui lol
+            Pane parent = null;
+            try {
+                if (playersList != null && playersList.getScene() != null && playersList.getScene().getRoot() instanceof Pane) {
+                    parent = (Pane) playersList.getScene().getRoot();
+                }
+            } catch (Exception ignored) {}
+            if (parent != null) {
+                NotificationUtil.showInfo(parent, username + " joined the room");
+            }
         });
     }
 
@@ -237,6 +241,15 @@ public class RoomController implements RoomListener {
     public void onPlayerDisconnected(String username) {
         Platform.runLater(() -> {
             System.out.println(username + " left the room");
+            Pane parent = null;
+            try {
+                if (playersList != null && playersList.getScene() != null && playersList.getScene().getRoot() instanceof Pane) {
+                    parent = (Pane) playersList.getScene().getRoot();
+                }
+            } catch (Exception ignored) {}
+            if (parent != null) {
+                NotificationUtil.showError(parent, username + " left the room");
+            }
 
             Player disconnectedPlayer = players.stream()
                     .filter(p -> p.getName().equals(username) && p.isHost())
@@ -253,8 +266,6 @@ public class RoomController implements RoomListener {
                     LoggerHandler.logFXMLFailed("Menu", e);
                 }
             }
-
-            // TODO: Add some notify ui lol
         });
     }
 
@@ -313,6 +324,10 @@ public class RoomController implements RoomListener {
         Platform.runLater(() -> {
             totalCard.setText("Total Cards = " + room.getTotalCard());
             totalRound.setText("Total Rounds = " + room.getTotalRound());
+            playerLimit.setText("Max Players = " + room.getPlayerLimit());
+            totalCardNow = room.getTotalCard();
+            totalRoundNow = room.getTotalRound();
+            playerLimitNow = room.getPlayerLimit();
         });
     }
 
@@ -334,6 +349,9 @@ public class RoomController implements RoomListener {
             Parent root = loader.load();
 
             RoomSettingsController controller = loader.getController();
+        controller.setCurrentTotalCard(room != null ? room.getTotalCard() : 4);
+        controller.setCurrentTotalRound(room != null ? room.getTotalRound() : 3);
+        controller.setCurrentPlayerLimit(room != null ? room.getPlayerLimit() : 1);
 
             Stage modal = new Stage();
             modal.initModality(Modality.APPLICATION_MODAL);
@@ -345,6 +363,7 @@ public class RoomController implements RoomListener {
             if (controller.isSaved()) {
                 int newTotalCard = controller.getSelectedTotalCard();
                 int newTotalRound = controller.getSelectedTotalRound();
+                int newPlayerLimit = controller.getSelectedPlayerLimit();
                 if (newTotalCard != totalCardNow) {
                     if (newTotalCard < 4 || newTotalCard > 6) {
                         System.out.println("DEBUG : TOTAL CARD MUST BETWEEN 4-6");
@@ -361,6 +380,13 @@ public class RoomController implements RoomListener {
                         return;
                     }
                     server.updateRoomSettings(newTotalRound, "TOTAL_ROUND");
+                }
+                if (newPlayerLimit != playerLimitNow) {
+                    if (newPlayerLimit < 1 || newPlayerLimit > 10) {
+                        System.out.println("DEBUG : PLAYER LIMIT MUST BETWEEN 1-10");
+                        return;
+                    }
+                    server.updateRoomSettings(newPlayerLimit, "PLAYER_LIMIT");
                 }
                 System.out.println("Settings saved: Total Rounds = " + newTotalRound);
             }

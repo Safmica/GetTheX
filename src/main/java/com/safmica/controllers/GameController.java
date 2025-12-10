@@ -28,6 +28,7 @@ import com.safmica.model.Game;
 import com.safmica.model.GameAnswer;
 import com.safmica.App;
 import com.safmica.listener.GameListener;
+import com.safmica.listener.RoomListener;
 import com.safmica.model.Player;
 import com.safmica.model.PlayerLeaderboard;
 import com.safmica.model.PlayerSurrender;
@@ -39,7 +40,7 @@ import com.safmica.GameSession;
 import javafx.stage.StageStyle;
 import com.safmica.utils.ui.NotificationUtil;
 
-public class GameController implements GameListener {
+public class GameController implements GameListener, RoomListener {
 
     @FXML
     private Label statusLabel;
@@ -103,6 +104,7 @@ public class GameController implements GameListener {
             server.randomizeCards();
         }
         client.addGameListener(this);
+        client.addRoomListener(this);
         startRound();
     }
 
@@ -182,6 +184,52 @@ public class GameController implements GameListener {
             playersContainer.getChildren().add(playerBox);
         }
     }
+
+    @Override
+    public void onPlayerListChanged(List<Player> serverPlayers) {
+        Platform.runLater(() -> {
+            players.setAll(serverPlayers);
+            setPlayers();
+        });
+    }
+
+    @Override
+    public void onPlayerConnected(String username) {
+        Platform.runLater(() -> {
+            NotificationUtil.showInfo(overlay != null ? overlay : playersContainer, username + " joined the room");
+        });
+    }
+
+    @Override
+    public void onPlayerDisconnected(String username) {
+        Platform.runLater(() -> {
+            NotificationUtil.showError(overlay != null ? overlay : playersContainer, username + " left the room");
+        });
+    }
+
+    @Override
+    public void onDuplicateUsernameAssigned(String assignedName) {}
+
+    @Override
+    public void onUsernameAccepted(String newName) {}
+
+    @Override
+    public void onConnectionError(String message) {
+        Platform.runLater(() -> {
+            NotificationUtil.showError(overlay != null ? overlay : playersContainer, message);
+            try {
+                App.setRoot("menu");
+            } catch (IOException | IllegalStateException e) {
+                LoggerHandler.logFXMLFailed("Menu", e);
+            }
+        });
+    }
+
+    @Override
+    public void onSettingChange(Room room) {}
+
+    @Override
+    public void onGameStart() {}
 
     private void setCurrentPlayer() {
         Player currentPlayer = players.stream()
@@ -389,15 +437,14 @@ public class GameController implements GameListener {
             return;
         }
 
-        if (cardUsed.stream().filter(Boolean::booleanValue).count() !=cards.size()) {
+        if (cardUsed.stream().filter(Boolean::booleanValue).count() != cards.size()) {
             System.out.println("Must implement all of the number");
             NotificationUtil.showError(overlay, "Must implement all of the number");
             return;
         }
 
         if (!areParenthesesBalanced(answer)) {
-            System.out.println("Invalid parentheses in expression");
-            currentAnswer.setText("INVALID PARENTHESES");
+            NotificationUtil.showError(overlay, "Invalid Parentheses");
             return;
         }
 
