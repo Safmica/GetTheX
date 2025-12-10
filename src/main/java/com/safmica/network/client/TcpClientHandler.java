@@ -377,6 +377,13 @@ public class TcpClientHandler extends Thread {
         } catch (SocketException e) {
             if (isRunning) {
                 System.out.println("WARNING: Connection to server lost.");
+                try {
+                    javafx.application.Platform.runLater(() -> {
+                        for (RoomListener l : roomListeners) {
+                            try { l.onConnectionError("Connection to server lost"); } catch (Exception ignored) {}
+                        }
+                    });
+                } catch (Exception ignored) {}
                 stopClient();
             }
         } catch (IOException e) {

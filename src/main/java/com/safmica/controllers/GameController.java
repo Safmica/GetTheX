@@ -214,7 +214,16 @@ public class GameController implements GameListener, RoomListener {
     public void onUsernameAccepted(String newName) {}
 
     @Override
-    public void onConnectionError(String message) {}
+    public void onConnectionError(String message) {
+        Platform.runLater(() -> {
+            NotificationUtil.showError(overlay != null ? overlay : playersContainer, message);
+            try {
+                App.setRoot("menu");
+            } catch (IOException | IllegalStateException e) {
+                LoggerHandler.logFXMLFailed("Menu", e);
+            }
+        });
+    }
 
     @Override
     public void onSettingChange(Room room) {}
