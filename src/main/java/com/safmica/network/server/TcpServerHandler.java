@@ -56,8 +56,6 @@ public class TcpServerHandler extends Thread {
     try {
       if (serverSocket != null && !serverSocket.isClosed()) {
         serverSocket.close();
-        System.out.println("DEBUG : SERVER CLOSE");
-        // TODO: REMOVE THIS DEBUG
       }
     } catch (IOException e) {
       LoggerHandler.logError("Error closing Client socket.", e);
@@ -146,7 +144,8 @@ public class TcpServerHandler extends Thread {
   }
 
   public boolean isFinalRoundPlayer(String username) {
-    if (username == null) return false;
+    if (username == null)
+      return false;
     return finalRoundPlayers.contains(username);
   }
 
@@ -188,8 +187,18 @@ public class TcpServerHandler extends Thread {
       int length;
       try {
         length = socketIn.readInt();
+      } catch (java.io.EOFException eof) {
+        try {
+          clientSocket.close();
+        } catch (IOException ignored) {
+        }
+        return;
       } catch (IOException e) {
         LoggerHandler.logError("Error reading username length from client.", e);
+        try {
+          clientSocket.close();
+        } catch (IOException ignored) {
+        }
         return;
       }
 
@@ -202,6 +211,10 @@ public class TcpServerHandler extends Thread {
       requestedUsername = new String(buf, StandardCharsets.UTF_8);
     } catch (IOException e) {
       LoggerHandler.logError("Error reading client username.", e);
+      try {
+        clientSocket.close();
+      } catch (IOException ignored) {
+      }
       return;
     }
 
@@ -281,7 +294,8 @@ public class TcpServerHandler extends Thread {
   }
 
   public synchronized boolean changeUsername(ClientHandler handler, String newName) {
-    if (newName == null || newName.trim().isEmpty()) return false;
+    if (newName == null || newName.trim().isEmpty())
+      return false;
     String candidate = newName.trim();
 
     if (handler.getUsername() != null && handler.getUsername().equalsIgnoreCase(candidate)) {
@@ -367,7 +381,8 @@ public class TcpServerHandler extends Thread {
   }
 
   private synchronized void broadcastPlayerSurrender(String username) {
-    PlayerSurrender playerSurrender = new PlayerSurrender(username, "Surrend ("+currentSurrenderOffer.size()+"/"+players.size()+")");
+    PlayerSurrender playerSurrender = new PlayerSurrender(username,
+        "Surrend (" + currentSurrenderOffer.size() + "/" + players.size() + ")");
     Message<PlayerSurrender> msg = new Message<>("PLAYER_SURRENDER", playerSurrender);
     broadcast(msg, null);
   }
