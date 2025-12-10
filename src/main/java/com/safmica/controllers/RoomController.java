@@ -158,7 +158,15 @@ public class RoomController implements RoomListener {
     public void onPlayerConnected(String username) {
         Platform.runLater(() -> {
             System.out.println(username + " joined the room");
-            // TODO: Add some notify ui lol
+            Pane parent = null;
+            try {
+                if (playersList != null && playersList.getScene() != null && playersList.getScene().getRoot() instanceof Pane) {
+                    parent = (Pane) playersList.getScene().getRoot();
+                }
+            } catch (Exception ignored) {}
+            if (parent != null) {
+                NotificationUtil.showInfo(parent, username + " joined the room");
+            }
         });
     }
 
@@ -183,6 +191,15 @@ public class RoomController implements RoomListener {
     public void onPlayerDisconnected(String username) {
         Platform.runLater(() -> {
             System.out.println(username + " left the room");
+            Pane parent = null;
+            try {
+                if (playersList != null && playersList.getScene() != null && playersList.getScene().getRoot() instanceof Pane) {
+                    parent = (Pane) playersList.getScene().getRoot();
+                }
+            } catch (Exception ignored) {}
+            if (parent != null) {
+                NotificationUtil.showError(parent, username + " left the room");
+            }
 
             Player disconnectedPlayer = players.stream()
                     .filter(p -> p.getName().equals(username) && p.isHost())
@@ -199,8 +216,6 @@ public class RoomController implements RoomListener {
                     LoggerHandler.logFXMLFailed("Menu", e);
                 }
             }
-
-            // TODO: Add some notify ui lol
         });
     }
 
