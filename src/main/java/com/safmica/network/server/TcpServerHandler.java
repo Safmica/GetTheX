@@ -182,7 +182,7 @@ public class TcpServerHandler extends Thread {
   }
 
   private synchronized void handleNewClient(Socket clientSocket) {
-    String clientUsername;
+    String requestedUsername;
     try {
       DataInputStream socketIn = new DataInputStream(clientSocket.getInputStream());
       int length;
@@ -199,27 +199,39 @@ public class TcpServerHandler extends Thread {
 
       byte[] buf = new byte[length];
       socketIn.readFully(buf);
-      clientUsername = new String(buf, StandardCharsets.UTF_8);
+      requestedUsername = new String(buf, StandardCharsets.UTF_8);
     } catch (IOException e) {
       LoggerHandler.logError("Error reading client username.", e);
       return;
     }
 
+    boolean duplicate = players.stream().anyMatch(p -> p.getName().equalsIgnoreCase(requestedUsername));
+    String assignedName = requestedUsername;
+    if (duplicate) {
+      assignedName = "Player" + ((int) (Math.random() * 9000) + 1000);
+    }
+
     boolean isHost = players.isEmpty();
-    Player newPlayer = new Player(clientUsername, isHost);
-    ClientHandler handler = new ClientHandler(clientSocket, this, clientUsername);
+    Player newPlayer = new Player(assignedName, isHost);
+    ClientHandler handler = new ClientHandler(clientSocket, this, assignedName);
 
     players.add(newPlayer);
     clients.add(handler);
 
     sendPlayerListToClient(handler);
     sendRoomInfoToClient(handler);
-    broadcastPlayerEvent("CONNECTED", clientUsername, handler);
+
+    if (duplicate) {
+      Message<String> dupMsg = new Message<>("DUPLICATE_USERNAME", assignedName);
+      String dupJson = gson.toJson(dupMsg);
+      handler.sendMessage(dupJson);
+    }
+
+    broadcastPlayerEvent("CONNECTED", assignedName, handler);
     broadcastPlayerList(handler);
 
     handler.start();
-    System.out.println("CLIENT JOIN = " + clientUsername + (isHost ? " (HOST)" : ""));
-    // TODO: remove this debug
+    System.out.println("CLIENT JOIN = " + assignedName + (isHost ? " (HOST)" : ""));
   }
 
   public void enqueueAnswer(GameAnswer answer) {
@@ -266,6 +278,35 @@ public class TcpServerHandler extends Thread {
       }
     }
     return removedHandler || removedUser;
+  }
+
+  public synchronized boolean changeUsername(ClientHandler handler, String newName) {
+    if (newName == null || newName.trim().isEmpty()) return false;
+    String candidate = newName.trim();
+
+    if (handler.getUsername() != null && handler.getUsername().equalsIgnoreCase(candidate)) {
+      return true;
+    }
+
+    boolean exists = players.stream()
+        .anyMatch(p -> p.getName() != null && p.getName().equalsIgnoreCase(candidate));
+    if (exists) {
+      return false;
+    }
+
+    Player player = players.stream()
+        .filter(p -> p.getName() != null && p.getName().equalsIgnoreCase(handler.getUsername()))
+        .findFirst()
+        .orElse(null);
+
+    if (player != null) {
+      player.setName(candidate);
+    }
+
+    handler.setUsername(candidate);
+
+    broadcastPlayerList(null);
+    return true;
   }
 
   public void nextRound() {

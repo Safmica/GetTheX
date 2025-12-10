@@ -53,6 +53,9 @@ public class TcpClientHandler extends Thread {
     public static final String TYPE_PLAYER_SURRENDER = "PLAYER_SURRENDER";
     public static final String TYPE_NEXT_ROUND_WITH_SURRENDER = "NEXT_ROUND_WITH_SURRENDER";
     public static final String TYPE_FINAL_ROUND = "FINAL_ROUND";
+    public static final String TYPE_DUPLICATE_USERNAME = "DUPLICATE_USERNAME";
+    public static final String TYPE_CHANGE_USERNAME = "CHANGE_USERNAME";
+    public static final String TYPE_USERNAME_ACCEPTED = "USERNAME_ACCEPTED";
 
     private String username;
 
@@ -309,6 +312,34 @@ public class TcpClientHandler extends Thread {
                         });
                         break;
                     }
+                    case TYPE_DUPLICATE_USERNAME: {
+                        Type msgType = new TypeToken<Message<String>>() {}.getType();
+                        Message<String> msg = gson.fromJson(json, msgType);
+                        if (msg != null && msg.data != null) {
+                            String assigned = msg.data;
+                            this.username = assigned;
+                            Platform.runLater(() -> {
+                                for (RoomListener l : roomListeners) {
+                                    l.onDuplicateUsernameAssigned(assigned);
+                                }
+                            });
+                        }
+                        break;
+                    }
+                    case TYPE_USERNAME_ACCEPTED: {
+                        Type msgType = new TypeToken<Message<String>>() {}.getType();
+                        Message<String> msg = gson.fromJson(json, msgType);
+                        if (msg != null && msg.data != null) {
+                            String newName = msg.data;
+                            this.username = newName;
+                            Platform.runLater(() -> {
+                                for (RoomListener l : roomListeners) {
+                                    l.onUsernameAccepted(newName);
+                                }
+                            });
+                        }
+                        break;
+                    }
                     default: {
                         // todo: give some handle (if not lazy)
                     }
@@ -336,6 +367,14 @@ public class TcpClientHandler extends Thread {
     public void offerSurrender() {
         Message<String> msg = new Message<>("OFFER_SURRENDER", username);
         msg(msg);
+    }
+
+    public void requestChangeUsername(String newName) {
+        if (newName == null || newName.trim().isEmpty()) return;
+        Message<String> msg = new Message<>(TYPE_CHANGE_USERNAME, newName.trim());
+        // use a fresh gson in case run() hasn't set the field yet
+        String json = new Gson().toJson(msg);
+        sendMessage(json);
     }
 
     private void msg(Message<?> message) {

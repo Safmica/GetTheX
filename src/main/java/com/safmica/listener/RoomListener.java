@@ -10,4 +10,6 @@ public interface RoomListener {
     void onPlayerDisconnected(String username);
     void onSettingChange(Room room);
     void onGameStart();
+    void onDuplicateUsernameAssigned(String assignedName);
+    void onUsernameAccepted(String newName);
 }

@@ -7,6 +7,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -201,6 +202,33 @@ public class RoomController implements RoomListener {
             }
 
             // TODO: Add some notify ui lol
+        });
+    }
+
+    @Override
+    public void onDuplicateUsernameAssigned(String assignedName) {
+        Platform.runLater(() -> {
+            TextInputDialog dialog = new TextInputDialog(assignedName);
+            dialog.setTitle("Duplicate Username");
+            dialog.setHeaderText("Username already taken");
+            dialog.setContentText("Please enter a new username:");
+            dialog.initOwner(playersList.getScene().getWindow());
+
+            java.util.Optional<String> result = dialog.showAndWait();
+            if (result.isPresent()) {
+                String newName = result.get().trim();
+                if (!newName.isEmpty() && clientHandler != null) {
+                    clientHandler.requestChangeUsername(newName);
+                }
+            }
+        });
+    }
+
+    @Override
+    public void onUsernameAccepted(String newName) {
+        this.username = newName;
+        Platform.runLater(() -> {
+            System.out.println("Username updated to: " + newName);
         });
     }
 

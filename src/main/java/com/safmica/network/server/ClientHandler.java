@@ -26,6 +26,9 @@ public class ClientHandler extends Thread {
     private DataOutputStream out;
     private final String TYPE_GAME_ANSWER = "GAME_ANSWER";
     private final String TYPE_OFFER_SURRENDER = "OFFER_SURRENDER";
+    private final String TYPE_CHANGE_USERNAME = "CHANGE_USERNAME";
+    private final String TYPE_DUPLICATE_USERNAME = "DUPLICATE_USERNAME";
+    private final String TYPE_USERNAME_ACCEPTED = "USERNAME_ACCEPTED";
 
     public ClientHandler(Socket client, TcpServerHandler server, String username) {
         this.client = client;
@@ -109,6 +112,24 @@ public class ClientHandler extends Thread {
                         }
                         break;
                     }
+                    case TYPE_CHANGE_USERNAME: {
+                        Type msgType = new TypeToken<Message<String>>() {}.getType();
+                        Message<String> msg = gson.fromJson(json, msgType);
+                        if (msg != null && msg.data != null && !msg.data.trim().isEmpty()) {
+                            String newName = msg.data.trim();
+                            boolean ok = server.changeUsername(this, newName);
+                            if (ok) {
+                                Message<String> okMsg = new Message<>(TYPE_USERNAME_ACCEPTED, newName);
+                                String okJson = gson.toJson(okMsg);
+                                sendMessage(okJson);
+                            } else {
+                                Message<String> dupMsg = new Message<>(TYPE_DUPLICATE_USERNAME, this.username);
+                                String dupJson = gson.toJson(dupMsg);
+                                sendMessage(dupJson);
+                            }
+                        }
+                        break;
+                    }
                     default: {
                         // todo: give some handle (if not lazy)
                     }
@@ -176,6 +197,14 @@ public class ClientHandler extends Thread {
         if (other == null)
             return false;
         return other.equals(this.username);
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getUsername() {
+        return this.username;
     }
 
     public boolean isConnected() {

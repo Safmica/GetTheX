@@ -6,7 +6,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
@@ -20,11 +19,7 @@ import javafx.stage.Stage;
 import javafx.scene.layout.StackPane;
 import javafx.geometry.Pos;
 import javafx.geometry.Side;
-import net.objecthunter.exp4j.Expression;
-import net.objecthunter.exp4j.ExpressionBuilder;
-
 import java.io.IOException;
-import java.net.Socket;
 import javafx.util.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -85,15 +80,12 @@ public class GameController implements GameListener {
 
     private TcpClientHandler client;
     private TcpServerHandler server;
-    private boolean isHost = true;
     private String username;
 
     private Room room;
     private Game game;
     private GameAnswer gameAnswer = new GameAnswer();
     private ObservableList<Player> players = FXCollections.observableArrayList();
-
-    private List<PlayerLeaderboard> latestLeaderboard = new ArrayList<>();
 
     private List<Integer> cards = new ArrayList<>();
     private List<Button> cardButtons = new ArrayList<>();
@@ -107,7 +99,6 @@ public class GameController implements GameListener {
         this.server = server;
         this.client = client;
         if (server != null) {
-            isHost = true;
             server.setLeaderboard();
             server.randomizeCards();
         }
