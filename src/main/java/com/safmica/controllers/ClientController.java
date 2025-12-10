@@ -2,6 +2,10 @@ package com.safmica.controllers;
 
 import com.safmica.*;
 import com.safmica.utils.*;
+import com.safmica.utils.ui.NotificationUtil;
+import javafx.scene.layout.Pane;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.io.IOException;
 import java.net.URL;
 
@@ -35,6 +39,24 @@ public class ClientController {
 
     try {
       int port = Integer.parseInt(portText);
+      try (Socket test = new Socket()) {
+        test.connect(new InetSocketAddress(ipText, port), 2000);
+      } catch (Exception connEx) {
+        String msg = "Failed to connect to server: " + connEx.getMessage();
+        Pane parent = null;
+        try {
+          if (usernameField.getScene() != null && usernameField.getScene().getRoot() instanceof Pane) {
+            parent = (Pane) usernameField.getScene().getRoot();
+          }
+        } catch (Exception ignored) {}
+        if (parent != null) {
+          NotificationUtil.showError(parent, msg);
+        } else {
+          System.out.println(msg);
+        }
+        return;
+      }
+
       URL fxmlUrl = getClass().getResource("/com/safmica/views/room.fxml");
       FXMLLoader loader = new FXMLLoader(fxmlUrl);
       Parent root = loader.load();

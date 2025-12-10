@@ -12,4 +12,5 @@ public interface RoomListener {
     void onGameStart();
     void onDuplicateUsernameAssigned(String assignedName);
     void onUsernameAccepted(String newName);
+    void onConnectionError(String message);
 }

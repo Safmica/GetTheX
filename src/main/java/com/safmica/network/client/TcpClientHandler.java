@@ -105,9 +105,25 @@ public class TcpClientHandler extends Thread {
             this.start();
         } catch (IOException e) {
             LoggerHandler.logError("Failed to start client or connect to server.", e);
+            String msg = "Failed to connect to server: " + e.getMessage();
+            try {
+                Platform.runLater(() -> {
+                    for (RoomListener l : roomListeners) {
+                        try { l.onConnectionError(msg); } catch (Exception ignored) {}
+                    }
+                });
+            } catch (Exception ignored) {}
             stopClient();
         } catch (Exception e) {
             LoggerHandler.logError("Unexpected error while starting client.", e);
+            String msg = "Unexpected error while starting client: " + e.getMessage();
+            try {
+                Platform.runLater(() -> {
+                    for (RoomListener l : roomListeners) {
+                        try { l.onConnectionError(msg); } catch (Exception ignored) {}
+                    }
+                });
+            } catch (Exception ignored) {}
             stopClient();
         }
     }

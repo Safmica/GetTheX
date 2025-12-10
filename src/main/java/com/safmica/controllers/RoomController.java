@@ -25,6 +25,8 @@ import com.safmica.network.client.TcpClientHandler;
 import com.safmica.network.server.TcpServerHandler;
 import com.safmica.utils.LoggerHandler;
 import com.safmica.utils.ui.PlayerListCell;
+import com.safmica.utils.ui.NotificationUtil;
+import javafx.scene.layout.Pane;
 
 public class RoomController implements RoomListener {
 
@@ -51,41 +53,34 @@ public class RoomController implements RoomListener {
     @FXML
     private void initialize() {
         playersList.setItems(players);
-        playersList.setCellFactory(listView -> new PlayerListCell());
+
+        playersList.setCellFactory(listView -> new PlayerListCell(null, () -> this.username));
     }
 
-    public void initAsHost(int port, String username) {
+    public void initAsHost(TcpServerHandler existingServer, int port, String username) {
         this.isHost = true;
         this.username = username;
-        server = new TcpServerHandler(port);
+        this.server = existingServer;
 
-        try {
-            server.startServer();
-            System.out.println("DEBUG : SERVER START ON PORT " + port);
-
-            if (startButton != null) {
-                startButton.setVisible(true);
-                startButton.setManaged(true);
-            }
-
-            if (settingButton != null) {
-                settingButton.setVisible(true);
-                settingButton.setManaged(true);
-            }
-
-            new Thread(() -> {
-                try {
-                    Thread.sleep(200);
-                    connectAsClient("localhost", port, username);
-                    System.out.println("DEBUG : HOST CONNECTED AS CLIENT");
-                } catch (Exception e) {
-                    LoggerHandler.logError("Error connecting host as client", e);
-                }
-            }).start();
-
-        } catch (IOException ex) {
-            LoggerHandler.logError("Error starting server", ex);
+        if (startButton != null) {
+            startButton.setVisible(true);
+            startButton.setManaged(true);
         }
+
+        if (settingButton != null) {
+            settingButton.setVisible(true);
+            settingButton.setManaged(true);
+        }
+
+        new Thread(() -> {
+            try {
+                Thread.sleep(200);
+                connectAsClient("localhost", port, username);
+                System.out.println("DEBUG : HOST CONNECTED AS CLIENT");
+            } catch (Exception e) {
+                LoggerHandler.logError("Error connecting host as client", e);
+            }
+        }).start();
     }
 
     public void initAsClient(String host, int port, String username) {
@@ -134,6 +129,7 @@ public class RoomController implements RoomListener {
         clientHandler = new TcpClientHandler(host, port, username);
         clientHandler.addRoomListener(this);
         clientHandler.startClient();
+        Platform.runLater(() -> playersList.setCellFactory(listView -> new PlayerListCell(clientHandler, () -> this.username)));
     }
 
     private void cleanup() {
@@ -229,6 +225,28 @@ public class RoomController implements RoomListener {
         this.username = newName;
         Platform.runLater(() -> {
             System.out.println("Username updated to: " + newName);
+
+            if (playersList != null) {
+                playersList.refresh();
+            }
+        });
+    }
+
+    @Override
+    public void onConnectionError(String message) {
+        Platform.runLater(() -> {
+            Pane parent = null;
+            try {
+                if (playersList != null && playersList.getScene() != null && playersList.getScene().getRoot() instanceof Pane) {
+                    parent = (Pane) playersList.getScene().getRoot();
+                }
+            } catch (Exception ignored) {}
+
+            if (parent != null) {
+                NotificationUtil.showError(parent, message);
+            } else {
+                System.out.println("Connection error: " + message);
+            }
         });
     }
 
