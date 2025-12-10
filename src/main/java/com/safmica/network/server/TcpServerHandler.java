@@ -85,8 +85,6 @@ public class TcpServerHandler extends Thread {
     try {
       if (serverSocket != null && !serverSocket.isClosed()) {
         serverSocket.close();
-        System.out.println("DEBUG : SERVER CLOSE");
-        // TODO: REMOVE THIS DEBUG
       }
     } catch (IOException e) {
       LoggerHandler.logError("Error closing Client socket.", e);
@@ -228,8 +226,18 @@ public class TcpServerHandler extends Thread {
       int length;
       try {
         length = socketIn.readInt();
+      } catch (java.io.EOFException eof) {
+        try {
+          clientSocket.close();
+        } catch (IOException ignored) {
+        }
+        return;
       } catch (IOException e) {
         LoggerHandler.logError("Error reading username length from client.", e);
+        try {
+          clientSocket.close();
+        } catch (IOException ignored) {
+        }
         return;
       }
 
@@ -242,6 +250,10 @@ public class TcpServerHandler extends Thread {
       requestedUsername = new String(buf, StandardCharsets.UTF_8);
     } catch (IOException e) {
       LoggerHandler.logError("Error reading client username.", e);
+      try {
+        clientSocket.close();
+      } catch (IOException ignored) {
+      }
       return;
     }
 
