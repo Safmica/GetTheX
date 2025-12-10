@@ -3,6 +3,13 @@ package com.safmica.controllers;
 import com.safmica.*;
 import com.safmica.utils.*;
 import com.safmica.utils.ui.NotificationUtil;
+import com.safmica.network.client.TcpClientHandler;
+import com.safmica.listener.RoomListener;
+import com.safmica.model.Player;
+import com.safmica.model.Room;
+import java.util.List;
+import javafx.scene.Scene;
+import javafx.scene.layout.Pane;
 import java.io.IOException;
 import java.net.URL;
 
@@ -35,18 +42,16 @@ public class ClientController {
     String ipText = ipAddressField.getText();
     try {
       int port = Integer.parseInt(portText);
-      // Start client and stay on client.fxml; only navigate to room on successful acceptance
-      com.safmica.network.client.TcpClientHandler client = new com.safmica.network.client.TcpClientHandler(ipText, port, usernameText);
-      client.addRoomListener(new com.safmica.listener.RoomListener() {
+  TcpClientHandler client = new TcpClientHandler(ipText, port, usernameText);
+      client.addRoomListener(new RoomListener() {
         @Override
-        public void onPlayerListChanged(java.util.List<com.safmica.model.Player> players) {}
+        public void onPlayerListChanged(List<Player> players) {}
         @Override
         public void onPlayerConnected(String username) {}
         @Override
         public void onPlayerDisconnected(String username) {}
         @Override
-        public void onSettingChange(com.safmica.model.Room room) {
-          // First successful room snapshot -> navigate to room scene
+        public void onSettingChange(Room room) {
           try {
             URL fxmlUrl = getClass().getResource("/com/safmica/views/room.fxml");
             FXMLLoader loader = new FXMLLoader(fxmlUrl);
@@ -66,11 +71,10 @@ public class ClientController {
         public void onUsernameAccepted(String newName) {}
         @Override
         public void onConnectionError(String message) {
-          // Show notification on the current client screen (client.fxml)
           try {
-            javafx.scene.Scene scene = usernameField.getScene();
-            if (scene != null && scene.getRoot() instanceof javafx.scene.layout.Pane) {
-              NotificationUtil.showError((javafx.scene.layout.Pane) scene.getRoot(), message);
+            Scene scene = usernameField.getScene();
+            if (scene != null && scene.getRoot() instanceof Pane) {
+              NotificationUtil.showError((Pane) scene.getRoot(), message);
             } else {
               LoggerHandler.logErrorMessage(message);
             }
