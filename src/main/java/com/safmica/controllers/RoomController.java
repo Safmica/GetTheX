@@ -86,6 +86,46 @@ public class RoomController implements RoomListener {
         }).start();
     }
 
+    public void initAsHostFromSave(TcpServerHandler existingServer, int port, String username, com.safmica.model.SaveState saveState) {
+        this.isHost = true;
+        this.username = username;
+        this.server = existingServer;
+
+        if (saveState.getRoom() != null) {
+            this.room = saveState.getRoom();
+            this.totalCardNow = room.getTotalCard();
+            this.totalRoundNow = room.getTotalRound();
+            Platform.runLater(() -> {
+                totalCard.setText("Total Cards = " + room.getTotalCard());
+                totalRound.setText("Total Rounds = " + room.getTotalRound());
+            });
+        }
+
+        if (saveState.getPlayers() != null) {
+            Platform.runLater(() -> players.setAll(saveState.getPlayers()));
+        }
+
+        if (startButton != null) {
+            startButton.setVisible(true);
+            startButton.setManaged(true);
+        }
+
+        if (settingButton != null) {
+            settingButton.setVisible(true);
+            settingButton.setManaged(true);
+        }
+
+        new Thread(() -> {
+            try {
+                Thread.sleep(200);
+                connectAsClient("localhost", port, username);
+                System.out.println("DEBUG : HOST RECONNECTED FROM SAVE AS CLIENT");
+            } catch (Exception e) {
+                LoggerHandler.logError("Error connecting host as client from save", e);
+            }
+        }).start();
+    }
+
     public void initAsClient(String host, int port, String username) {
         this.isHost = false;
         this.username = username;
@@ -139,7 +179,7 @@ public class RoomController implements RoomListener {
     }
 
     private void connectAsClient(String host, int port, String username) {
-        clientHandler = new TcpClientHandler(host, port, username);
+        clientHandler = new TcpClientHandler(host, port, username, isHost);
         clientHandler.addRoomListener(this);
         clientHandler.startClient();
         Platform.runLater(() -> playersList.setCellFactory(listView -> new PlayerListCell(clientHandler, () -> this.username)));

@@ -29,6 +29,9 @@ public class ClientHandler extends Thread {
     private final String TYPE_CHANGE_USERNAME = "CHANGE_USERNAME";
     private final String TYPE_DUPLICATE_USERNAME = "DUPLICATE_USERNAME";
     private final String TYPE_USERNAME_ACCEPTED = "USERNAME_ACCEPTED";
+    private final String TYPE_RECONNECT_REQUEST = "RECONNECT_REQUEST";
+    private final String TYPE_RECONNECT_ACCEPT = "RECONNECT_ACCEPT";
+    private final String TYPE_RECONNECT_REJECT = "RECONNECT_REJECT";
 
     public ClientHandler(Socket client, TcpServerHandler server, String username) {
         this.client = client;
@@ -126,6 +129,22 @@ public class ClientHandler extends Thread {
                                 Message<String> dupMsg = new Message<>(TYPE_DUPLICATE_USERNAME, this.username);
                                 String dupJson = gson.toJson(dupMsg);
                                 sendMessage(dupJson);
+                            }
+                        }
+                        break;
+                    }
+                    case TYPE_RECONNECT_REQUEST: {
+                        Type msgType = new TypeToken<Message<String>>() {}.getType();
+                        Message<String> msg = gson.fromJson(json, msgType);
+                        if (msg != null && msg.data != null) {
+                            String requestedId = msg.data.trim();
+                            boolean ok = server.acceptReconnect(this, requestedId);
+                            if (ok) {
+                                Message<String> okMsg = new Message<>(TYPE_RECONNECT_ACCEPT, this.username);
+                                sendMessage(gson.toJson(okMsg));
+                            } else {
+                                Message<String> rejMsg = new Message<>(TYPE_RECONNECT_REJECT, requestedId);
+                                sendMessage(gson.toJson(rejMsg));
                             }
                         }
                         break;

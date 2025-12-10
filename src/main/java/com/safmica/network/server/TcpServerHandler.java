@@ -9,15 +9,19 @@ import com.safmica.model.PlayerEvent;
 import com.safmica.model.PlayerLeaderboard;
 import com.safmica.model.PlayerSurrender;
 import com.safmica.model.Room;
+import com.safmica.model.SaveState;
+import com.safmica.utils.AutosaveUtil;
 import com.safmica.utils.LoggerHandler;
 
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class TcpServerHandler extends Thread {
@@ -31,6 +35,8 @@ public class TcpServerHandler extends Thread {
   private SubmissionProcessor submissionProcessor;
   private final List<ClientHandler> clients = new CopyOnWriteArrayList<>();
   private final List<Player> players = new CopyOnWriteArrayList<>();
+  private volatile boolean reconnectMode = false;
+  private final List<String> allowedReconnectIds = new CopyOnWriteArrayList<>();
   private final String TOTAL_CARD = "TOTAL_CARD";
   private final String TOTAL_ROUND = "TOTAL_ROUND";
   private final String PLAYER_LIMIT = "PLAYER_LIMIT";
@@ -48,7 +54,30 @@ public class TcpServerHandler extends Thread {
     room = new Room(4, 3);
 
     submissionProcessor = new SubmissionProcessor(this);
-    // LoggerHandler.logInfoMessage("Server is running on port " + port);
+    try {
+      Optional<SaveState> maybe = AutosaveUtil.read();
+      if (maybe.isPresent()) {
+        SaveState s = maybe.get();
+        if (s.isInProgress() && s.getPlayers() != null && !s.getPlayers().isEmpty()) {
+          reconnectMode = true;
+          players.clear();
+          players.addAll(s.getPlayers());
+          for (Player p : s.getPlayers()) {
+            if (p != null && p.getId() != null)
+              allowedReconnectIds.add(p.getId());
+          }
+          if (s.getRoom() != null)
+            room = s.getRoom();
+          if (s.getGame() != null)
+            game = s.getGame();
+          LoggerHandler.logInfoMessage(
+              "Server started in RECONNECT mode. Allowed reconnect players: " + allowedReconnectIds.size());
+        }
+      }
+    } catch (Exception e) {
+      LoggerHandler.logError("Error loading autosave during server start.", e);
+    }
+
     this.start();
   }
 
@@ -136,6 +165,16 @@ public class TcpServerHandler extends Thread {
     randomizeCards();
     Message<List<String>> msg = new Message<>("FINAL_ROUND", new ArrayList<>(finalists));
     broadcast(msg, null);
+
+    try {
+      SaveState save = new SaveState(room, game, new ArrayList<>(players), game != null ? game.getLeaderboard() : null,
+          true, port);
+      boolean ok = AutosaveUtil.writeAtomic(save);
+      if (!ok)
+        LoggerHandler.logError("Autosave write failed at startFinalRound.", null);
+    } catch (Exception e) {
+      LoggerHandler.logError("Failed creating/writing autosave in startFinalRound.", e);
+    }
   }
 
   public synchronized void endFinalRound() {
@@ -222,6 +261,63 @@ public class TcpServerHandler extends Thread {
       return;
     }
 
+    boolean gameInProgress = false;
+    java.util.Optional<SaveState> maybeSave = AutosaveUtil.read();
+    if (maybeSave.isPresent() && maybeSave.get().isInProgress()) {
+      gameInProgress = true;
+
+      SaveState save = maybeSave.get();
+      boolean usernameExists = false;
+      if (save.getPlayers() != null) {
+        for (Player p : save.getPlayers()) {
+          if (p != null && p.getName() != null && p.getName().equalsIgnoreCase(requestedUsername)) {
+            usernameExists = true;
+            break;
+          }
+        }
+      }
+
+      if (!usernameExists) {
+        try {
+          DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
+          Message<String> rejectMsg = new Message<>("JOIN_REJECTED",
+              "Game in progress. Only previous players can rejoin.");
+          String json = gson.toJson(rejectMsg);
+          byte[] data = json.getBytes(StandardCharsets.UTF_8);
+          out.writeInt(data.length);
+          out.write(data);
+          out.flush();
+          clientSocket.close();
+          LoggerHandler
+              .logInfoMessage("Rejected join from '" + requestedUsername + "' - not a previous player in active game.");
+          return;
+        } catch (IOException ex) {
+          LoggerHandler.logError("Error sending rejection message.", ex);
+        }
+        return;
+      }
+    }
+
+    if (reconnectMode || gameInProgress) {
+      Player existing = players.stream()
+          .filter(p -> p.getName() != null && p.getName().equalsIgnoreCase(requestedUsername))
+          .findFirst()
+          .orElse(null);
+      if (existing != null) {
+        ClientHandler handler = new ClientHandler(clientSocket, this, existing.getName());
+        clients.add(handler);
+
+        sendPlayerListToClient(handler);
+        sendRoomInfoToClient(handler);
+
+        broadcastPlayerEvent("RECONNECTED", existing.getName(), handler);
+        broadcastPlayerList(handler);
+        handler.start();
+        System.out.println("CLIENT RECONNECT = " + existing.getName());
+        return;
+      }
+    }
+
     boolean duplicate = players.stream().anyMatch(p -> p.getName().equalsIgnoreCase(requestedUsername));
     String assignedName = requestedUsername;
     if (duplicate) {
@@ -279,6 +375,32 @@ public class TcpServerHandler extends Thread {
     System.out.println("CLIENT JOIN = " + assignedName + (isHost ? " (HOST)" : ""));
   }
 
+  public synchronized boolean acceptReconnect(ClientHandler handler, String playerId) {
+    if (!reconnectMode)
+      return false;
+    if (playerId == null || playerId.trim().isEmpty())
+      return false;
+    String pid = playerId.trim();
+    if (!allowedReconnectIds.contains(pid))
+      return false;
+
+    Player saved = players.stream().filter(p -> p.getId() != null && p.getId().equals(pid)).findFirst().orElse(null);
+    if (saved == null)
+      return false;
+
+    handler.setUsername(saved.getName());
+    clients.add(handler);
+
+    sendPlayerListToClient(handler);
+    sendRoomInfoToClient(handler);
+
+    broadcastPlayerEvent("RECONNECTED", saved.getName(), handler);
+    broadcastPlayerList(handler);
+    
+    allowedReconnectIds.remove(saved.getId());
+    return true;
+  }
+
   public void enqueueAnswer(GameAnswer answer) {
     if (submissionProcessor != null)
       submissionProcessor.enqueue(answer);
@@ -286,6 +408,14 @@ public class TcpServerHandler extends Thread {
 
   public Game getGame() {
     return game;
+  }
+
+  public boolean isReconnectMode() {
+    return reconnectMode;
+  }
+
+  public List<String> getAllowedReconnectIds() {
+    return new ArrayList<>(allowedReconnectIds);
   }
 
   public void broadcastMessage(Message<?> message) {
@@ -384,11 +514,29 @@ public class TcpServerHandler extends Thread {
     randomizeCards();
     Message<String> gameStart = new Message<>("NEXT_ROUND", null);
     broadcast(gameStart, null);
+
+    try {
+      SaveState save = new SaveState(room, game, new ArrayList<>(players), game != null ? game.getLeaderboard() : null,
+          true, port);
+      boolean ok = AutosaveUtil.writeAtomic(save);
+      if (!ok)
+        LoggerHandler.logError("Autosave write failed at nextRound.", null);
+    } catch (Exception e) {
+      LoggerHandler.logError("Failed creating/writing autosave in nextRound.", e);
+    }
   }
 
   public void roundOver(String winner) {
     Message<String> gameStart = new Message<>("ROUND_OVER", "THE WINNER IS " + winner);
     broadcast(gameStart, null);
+
+    try {
+      boolean ok = AutosaveUtil.delete();
+      if (!ok)
+        LoggerHandler.logError("Failed to delete autosave on roundOver.", null);
+    } catch (Exception e) {
+      LoggerHandler.logError("Failed deleting autosave in roundOver.", e);
+    }
   }
 
   public void randomizeCards() {
@@ -401,6 +549,17 @@ public class TcpServerHandler extends Thread {
 
     Message<Game> dataCards = new Message<>("CARDS_BROADCAST", game);
     broadcast(dataCards, null);
+
+    try {
+      SaveState save = new SaveState(room, game, new ArrayList<>(players), game != null ? game.getLeaderboard() : null,
+          true, port);
+      boolean ok = AutosaveUtil.writeAtomic(save);
+      if (!ok) {
+        LoggerHandler.logError("Autosave write failed at startGame.", null);
+      }
+    } catch (Exception e) {
+      LoggerHandler.logError("Failed creating/writing autosave in startGame.", e);
+    }
   }
 
   private void broadcast(Message<?> message, ClientHandler exclude) {
@@ -449,6 +608,16 @@ public class TcpServerHandler extends Thread {
     randomizeCards();
     Message<String> gameStart = new Message<>("NEXT_ROUND_WITH_SURRENDER", "PLAYER CHOOSE TO SURRENDER");
     broadcast(gameStart, null);
+
+    try {
+      SaveState save = new SaveState(room, game, new ArrayList<>(players), game != null ? game.getLeaderboard() : null,
+          true, port);
+      boolean ok = AutosaveUtil.writeAtomic(save);
+      if (!ok)
+        LoggerHandler.logError("Autosave write failed at nextRoundWithSurrender.", null);
+    } catch (Exception e) {
+      LoggerHandler.logError("Failed creating/writing autosave in nextRoundWithSurrender.", e);
+    }
   }
 
   private void broadcastSettinsEvent(ClientHandler exclude) {

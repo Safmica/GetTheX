@@ -10,6 +10,7 @@
         <Label text="Get The X" styleClass="title"/>
         <Button text="Create Game" onAction="#switchToServer" />
         <Button text="Join Game" onAction="#switchToClient"/>
+    <Button fx:id="reconnectButton" text="Reconnect" onAction="#reconnectFromMenu" />
         <Button text="Exit" onAction="#exitTheGame" styleClass="cancelButton"/>
     </children>
     <padding>

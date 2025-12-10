@@ -32,6 +32,7 @@
     </VBox>
     <HBox spacing="10" alignment="CENTER">
         <Button text="Join" styleClass="submitButton" onAction="#joinRoom" />
+        <Button fx:id="reconnectButton" text="Reconnect" styleClass="submitButton" onAction="#reconnectRoom" />
         <Button text="Cancel" styleClass="cancelButton" onAction="#backToMenu" />
     </HBox>
 </VBox>
