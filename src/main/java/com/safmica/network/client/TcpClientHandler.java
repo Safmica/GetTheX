@@ -5,6 +5,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.google.gson.Gson;
@@ -15,6 +16,7 @@ import java.lang.reflect.Type;
 
 import com.safmica.listener.GameListener;
 import com.safmica.listener.RoomListener;
+import com.safmica.model.ClientSaveState;
 import com.safmica.model.Game;
 import com.safmica.model.GameAnswer;
 import com.safmica.model.Message;
@@ -23,6 +25,7 @@ import com.safmica.model.PlayerEvent;
 import com.safmica.model.PlayerLeaderboard;
 import com.safmica.model.PlayerSurrender;
 import com.safmica.model.Room;
+import com.safmica.utils.ClientAutosaveUtil;
 import com.safmica.utils.LoggerHandler;
 
 import javafx.application.Platform;
@@ -30,6 +33,7 @@ import javafx.application.Platform;
 public class TcpClientHandler extends Thread {
     private String host;
     private int port;
+    private boolean isHost;
     private Socket client;
     private boolean isRunning = true;
     private Gson gson;
@@ -56,6 +60,10 @@ public class TcpClientHandler extends Thread {
     public static final String TYPE_DUPLICATE_USERNAME = "DUPLICATE_USERNAME";
     public static final String TYPE_CHANGE_USERNAME = "CHANGE_USERNAME";
     public static final String TYPE_USERNAME_ACCEPTED = "USERNAME_ACCEPTED";
+    public static final String TYPE_RECONNECT_REQUEST = "RECONNECT_REQUEST";
+    public static final String TYPE_RECONNECT_ACCEPT = "RECONNECT_ACCEPT";
+    public static final String TYPE_RECONNECT_REJECT = "RECONNECT_REJECT";
+    public static final String TYPE_JOIN_REJECTED = "JOIN_REJECTED";
 
     private String username;
 
@@ -64,7 +72,7 @@ public class TcpClientHandler extends Thread {
         this.port = port;
     }
 
-    public TcpClientHandler(String host, int port, String username) {
+    public TcpClientHandler(String host, int port, String username, boolean isHost) {
         this.host = host;
         this.port = port;
         this.username = username;
@@ -176,8 +184,7 @@ public class TcpClientHandler extends Thread {
                         Type listType = new TypeToken<Message<List<Player>>>() {
                         }.getType();
                         Message<List<Player>> listMsg = gson.fromJson(json, listType);
-                        List<Player> users = listMsg.data;
-                        System.out.println("user" + users);
+                        List<Player> users = listMsg.data;                        
                         Platform.runLater(() -> {
                             for (RoomListener l : roomListeners) {
                                 l.onPlayerListChanged(users);
@@ -221,6 +228,26 @@ public class TcpClientHandler extends Thread {
                     }
                     case TYPE_GAME_START: {
                         System.out.println("GAME START");
+                        try {
+                            if (username != null && host != null && port > 0) {
+                                if (!isHost) {
+                                    String playerId = null;
+                                    Optional<ClientSaveState> maybeExisting = ClientAutosaveUtil.read();
+                                    if (maybeExisting.isPresent()) {
+                                        playerId = maybeExisting.get().getPlayerId();
+                                    }
+                                    
+                                    ClientSaveState clientSave = new ClientSaveState(
+                                        username, host, port, playerId
+                                    );
+                                    ClientAutosaveUtil.writeAtomic(clientSave);
+                                } else {
+                                    System.out.println("DEBUG: Host detected, skipping client autosave");
+                                }
+                            }
+                        } catch (Exception e) {
+                            LoggerHandler.logError("Failed to create client autosave at round start.", e);
+                        }
                         Platform.runLater(() -> {
                             for (RoomListener l : roomListeners) {
                                 l.onGameStart();
@@ -285,6 +312,13 @@ public class TcpClientHandler extends Thread {
                     }
                     case TYPE_ROUND_OVER: {
                         System.out.println("ROUND OVER");
+                        try {
+                            ClientAutosaveUtil.delete();
+                            System.out.println("DEBUG: Client autosave deleted at round over");
+                        } catch (Exception e) {
+                            LoggerHandler.logError("Failed to delete client autosave at round over.", e);
+                        }
+                        
                         Type msgType = new TypeToken<Message<String>>() {
                         }.getType();
                         Message<String> msg = gson.fromJson(json, msgType);
@@ -356,6 +390,44 @@ public class TcpClientHandler extends Thread {
                         }
                         break;
                     }
+                    case TYPE_RECONNECT_ACCEPT: {
+                        Type msgType = new TypeToken<Message<String>>() {}.getType();
+                        Message<String> msg = gson.fromJson(json, msgType);
+                        if (msg != null && msg.data != null) {
+                            String restoredName = msg.data;
+                            this.username = restoredName;
+                            Platform.runLater(() -> {
+                                for (RoomListener l : roomListeners) {
+                                    l.onPlayerConnected(restoredName);
+                                }
+                            });
+                        }
+                        break;
+                    }
+                    case TYPE_RECONNECT_REJECT: {
+                        Type msgType = new TypeToken<Message<String>>() {}.getType();
+                        Message<String> msg = gson.fromJson(json, msgType);
+                        String rejectedId = msg != null ? msg.data : null;
+                        String reason = "Reconnect rejected" + (rejectedId != null ? (": " + rejectedId) : "");
+                        Platform.runLater(() -> {
+                            for (RoomListener l : roomListeners) {
+                                try { l.onConnectionError(reason); } catch (Exception ignored) {}
+                            }
+                        });
+                        break;
+                    }
+                    case TYPE_JOIN_REJECTED: {
+                        Type msgType = new TypeToken<Message<String>>() {}.getType();
+                        Message<String> msg = gson.fromJson(json, msgType);
+                        String reason = msg != null && msg.data != null ? msg.data : "Join rejected";
+                        Platform.runLater(() -> {
+                            for (RoomListener l : roomListeners) {
+                                try { l.onConnectionError(reason); } catch (Exception ignored) {}
+                            }
+                        });
+                        stopClient();
+                        break;
+                    }
                     default: {
                         // todo: give some handle (if not lazy)
                     }
@@ -388,7 +460,13 @@ public class TcpClientHandler extends Thread {
     public void requestChangeUsername(String newName) {
         if (newName == null || newName.trim().isEmpty()) return;
         Message<String> msg = new Message<>(TYPE_CHANGE_USERNAME, newName.trim());
-        // use a fresh gson in case run() hasn't set the field yet
+        String json = new Gson().toJson(msg);
+        sendMessage(json);
+    }
+
+    public void requestReconnect(String playerId) {
+        if (playerId == null || playerId.trim().isEmpty()) return;
+        Message<String> msg = new Message<>(TYPE_RECONNECT_REQUEST, playerId.trim());
         String json = new Gson().toJson(msg);
         sendMessage(json);
     }
