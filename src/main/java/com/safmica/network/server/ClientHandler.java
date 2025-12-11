@@ -48,12 +48,10 @@ public class ClientHandler extends Thread {
     public void run() {
         gson = new Gson();
         try {
-            DataInputStream dis = new DataInputStream(client.getInputStream());
-
             while (isConnected() && client != null && !client.isClosed()) {
                 int length;
                 try {
-                    length = dis.readInt();
+                    length = in.readInt();
                 } catch (EOFException e) {
                     break;
                 }
@@ -63,7 +61,7 @@ public class ClientHandler extends Thread {
                 }
 
                 byte[] buf = new byte[length];
-                dis.readFully(buf);
+                in.readFully(buf);
 
                 String json = new String(buf, StandardCharsets.UTF_8);
 

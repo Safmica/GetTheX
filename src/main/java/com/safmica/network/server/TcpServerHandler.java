@@ -12,6 +12,7 @@ import com.safmica.model.Room;
 import com.safmica.utils.LoggerHandler;
 
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.net.ServerSocket;
@@ -184,10 +185,10 @@ public class TcpServerHandler extends Thread {
   private synchronized void handleNewClient(Socket clientSocket) {
     String requestedUsername;
     try {
-      DataInputStream socketIn = new DataInputStream(clientSocket.getInputStream());
+      DataInputStream in = new DataInputStream(clientSocket.getInputStream());
       int length;
       try {
-        length = socketIn.readInt();
+        length = in.readInt();
       } catch (java.io.EOFException eof) {
         try {
           clientSocket.close();
@@ -208,7 +209,7 @@ public class TcpServerHandler extends Thread {
       }
 
       byte[] buf = new byte[length];
-      socketIn.readFully(buf);
+      in.readFully(buf);
       requestedUsername = new String(buf, StandardCharsets.UTF_8);
     } catch (IOException e) {
       LoggerHandler.logError("Error reading client username.", e);
@@ -229,11 +230,11 @@ public class TcpServerHandler extends Thread {
       try {
         Message<String> fullMsg = new Message<>("ROOM_FULL", "Game in progress");
         String json = gson.toJson(fullMsg);
-        java.io.DataOutputStream dos = new java.io.DataOutputStream(clientSocket.getOutputStream());
+        DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
         byte[] data = json.getBytes(StandardCharsets.UTF_8);
-        dos.writeInt(data.length);
-        dos.write(data);
-        dos.flush();
+        out.writeInt(data.length);
+        out.write(data);
+        out.flush();
       } catch (Exception ignored) {}
       try { clientSocket.close(); } catch (IOException ignored) {}
       return;
@@ -243,11 +244,11 @@ public class TcpServerHandler extends Thread {
       try {
         Message<String> fullMsg = new Message<>("ROOM_FULL", "Room is full");
         String json = gson.toJson(fullMsg);
-        java.io.DataOutputStream dos = new java.io.DataOutputStream(clientSocket.getOutputStream());
+        DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
         byte[] data = json.getBytes(StandardCharsets.UTF_8);
-        dos.writeInt(data.length);
-        dos.write(data);
-        dos.flush();
+        out.writeInt(data.length);
+        out.write(data);
+        out.flush();
       } catch (Exception ignored) {}
       try { clientSocket.close(); } catch (IOException ignored) {}
       return;
