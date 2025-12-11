@@ -213,6 +213,7 @@ public class TcpClientHandler extends Thread {
                         Room room = roomInfo.data;
                         System.out.println("DEBUG : total cards" + room.getTotalCard());
                         System.out.println("DEBUG : total rounds" + room.getTotalRound());
+                        System.out.println("DEBUG : total player" + room.getPlayerLimit());
                         Platform.runLater(() -> {
                             for (RoomListener l : roomListeners) {
                                 l.onSettingChange(room);

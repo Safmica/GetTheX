@@ -42,33 +42,60 @@ public class ClientController {
     String ipText = ipAddressField.getText();
     try {
       int port = Integer.parseInt(portText);
-  TcpClientHandler client = new TcpClientHandler(ipText, port, usernameText);
+      TcpClientHandler client = new TcpClientHandler(ipText, port, usernameText);
+      // Cache early events that may arrive before the Room scene/controller is loaded.
+  final java.util.concurrent.atomic.AtomicReference<java.util.List<com.safmica.model.Player>> cachedPlayers = new java.util.concurrent.atomic.AtomicReference<>();
+  final java.util.concurrent.atomic.AtomicReference<com.safmica.model.Room> cachedRoom = new java.util.concurrent.atomic.AtomicReference<>();
       client.addRoomListener(new RoomListener() {
         @Override
-        public void onPlayerListChanged(List<Player> players) {}
+        public void onPlayerListChanged(List<Player> players) {
+          // Cache the player list; RoomController will be attached after scene change.
+          cachedPlayers.set(new java.util.ArrayList<>(players));
+        }
+
         @Override
-        public void onPlayerConnected(String username) {}
+        public void onPlayerConnected(String username) {
+        }
+
         @Override
-        public void onPlayerDisconnected(String username) {}
+        public void onPlayerDisconnected(String username) {
+        }
+
         @Override
         public void onSettingChange(Room room) {
           try {
+            cachedRoom.set(room);
             URL fxmlUrl = getClass().getResource("/com/safmica/views/room.fxml");
             FXMLLoader loader = new FXMLLoader(fxmlUrl);
             Parent root = loader.load();
             RoomController roomController = loader.getController();
             roomController.initAsClientWithHandler(client, usernameText);
+            List<Player> playersNow = cachedPlayers.get();
+            if (playersNow != null && !playersNow.isEmpty()) {
+              roomController.onPlayerListChanged(playersNow);
+            }
+            Room cached = cachedRoom.get();
+            if (cached != null) {
+              roomController.onSettingChange(cached);
+            }
             App.setRoot(root);
           } catch (IOException | IllegalStateException e) {
             LoggerHandler.logError("Failed to change to room scene.", e);
           }
         }
+
         @Override
-        public void onGameStart() {}
+        public void onGameStart() {
+        }
+
         @Override
-        public void onDuplicateUsernameAssigned(String assignedName) {}
+        public void onDuplicateUsernameAssigned(String assignedName) {
+        }
+
         @Override
-        public void onUsernameAccepted(String newName) {}
+        public void onUsernameAccepted(String newName) {
+        }
+
         @Override
         public void onConnectionError(String message) {
           try {
