@@ -25,7 +25,7 @@ public class TcpServerHandler extends Thread {
 
   private ServerSocket serverSocket;
   private int port;
-  private Gson gson = new com.google.gson.Gson();
+  private Gson gson = new Gson();
   private boolean isRunning = true;
   private Room room;
   private Game game;

@@ -232,7 +232,7 @@ public class GameController implements GameListener, RoomListener {
     public void onSettingChange(Room updatedRoom) {
         this.room = updatedRoom;
         try {
-            GameSession.getInstance().setRoom(updatedRoom);
+                GameSession.getInstance().setRoom(updatedRoom);
         } catch (Exception ignored) {}
     }
 

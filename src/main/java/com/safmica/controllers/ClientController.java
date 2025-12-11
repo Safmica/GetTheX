@@ -7,7 +7,11 @@ import com.safmica.network.client.TcpClientHandler;
 import com.safmica.listener.RoomListener;
 import com.safmica.model.Player;
 import com.safmica.model.Room;
+
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import java.io.IOException;
@@ -43,14 +47,12 @@ public class ClientController {
     try {
       int port = Integer.parseInt(portText);
       TcpClientHandler client = new TcpClientHandler(ipText, port, usernameText);
-      // Cache early events that may arrive before the Room scene/controller is loaded.
-  final java.util.concurrent.atomic.AtomicReference<java.util.List<com.safmica.model.Player>> cachedPlayers = new java.util.concurrent.atomic.AtomicReference<>();
-  final java.util.concurrent.atomic.AtomicReference<com.safmica.model.Room> cachedRoom = new java.util.concurrent.atomic.AtomicReference<>();
+      final AtomicReference<List<Player>> cachedPlayers = new AtomicReference<>();
+      final AtomicReference<Room> cachedRoom = new AtomicReference<>();
       client.addRoomListener(new RoomListener() {
         @Override
         public void onPlayerListChanged(List<Player> players) {
-          // Cache the player list; RoomController will be attached after scene change.
-          cachedPlayers.set(new java.util.ArrayList<>(players));
+          cachedPlayers.set(new ArrayList<>(players));
         }
 
         @Override
