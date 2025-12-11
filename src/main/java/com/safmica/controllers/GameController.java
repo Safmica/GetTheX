@@ -190,6 +190,9 @@ public class GameController implements GameListener, RoomListener {
         Platform.runLater(() -> {
             players.setAll(serverPlayers);
             setPlayers();
+            try {
+                GameSession.getInstance().setPlayers(new java.util.ArrayList<>(players));
+            } catch (Exception ignored) {}
         });
     }
 
@@ -226,7 +229,12 @@ public class GameController implements GameListener, RoomListener {
     }
 
     @Override
-    public void onSettingChange(Room room) {}
+    public void onSettingChange(Room updatedRoom) {
+        this.room = updatedRoom;
+        try {
+            GameSession.getInstance().setRoom(updatedRoom);
+        } catch (Exception ignored) {}
+    }
 
     @Override
     public void onGameStart() {}
